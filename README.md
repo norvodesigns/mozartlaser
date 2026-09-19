@@ -74,13 +74,19 @@ upload works without a cross-origin request.
 
 ## Deploying to Vercel
 
-The site is a standard Next.js app and needs no special configuration.
+The Vercel project (`norvo-designs-projects/mozartlaser`) is already connected
+to this repository and builds every branch. The site is a standard Next.js app
+and needs no special configuration.
+
+`mozartlaser.com` is still served by GitHub Pages, so the Vercel project only
+holds `mozartlaser.vercel.app` for now. Merging to `main` therefore changes
+what `mozartlaser.vercel.app` serves, not the live site.
+
+To finish the move:
 
 1. Make the repository private in GitHub settings.
 2. Turn off GitHub Pages (Settings → Pages → Source: None).
-3. Import the repository in Vercel. Framework preset: Next.js. Build command,
-   output directory and install command are all detected.
-4. Move `mozartlaser.com` and `www.mozartlaser.com` to the Vercel project and
+3. Add `mozartlaser.com` and `www.mozartlaser.com` to the Vercel project and
    update the DNS records Vercel shows. `CNAME` in the repository root is a
    GitHub Pages artifact and can be deleted once DNS has moved.
 
