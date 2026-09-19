@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function CreatePage({
   searchParams,
 }: {
-  searchParams: { product?: string };
+  searchParams: { product?: string; text?: string };
 }) {
   const products = getProducts();
   const initialSlug =
@@ -22,19 +22,23 @@ export default function CreatePage({
 
   return (
     <section className="section">
-      <div className="container">
-        <div className="ml-section-head section__head">
-          <p className="ml-section-head__eyebrow">Free personalization</p>
-          <h1 className="ml-section-head__title">
+      <div className="wrap">
+        <div className="head">
+          <p className="eyebrow">Free personalization</p>
+          <h1>
             Tell us what you <em>want</em>
           </h1>
-          <p className="ml-section-head__lede">
+          <p className="lede">
             A name, a date, a photo, a design. Answer three short steps and we will
             send a proof before anything is cut.
           </p>
         </div>
 
-        <CreateFlow products={products} initialSlug={initialSlug} />
+        <CreateFlow
+          products={products}
+          initialSlug={initialSlug}
+          initialText={(searchParams.text ?? "").slice(0, 60)}
+        />
       </div>
     </section>
   );

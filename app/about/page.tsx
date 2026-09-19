@@ -1,156 +1,145 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
+import { CONTACT_EMAIL, PROMISES } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Mozart Laser is a small Christian studio in California making laser engraved pieces. Craftsmanship matters, meaning matters, and every order is handled personally.',
+    'Mozart Laser is a California-based studio dedicated to the art of precision engraving. One person, premium hardwoods, every order handled personally.',
   alternates: { canonical: '/about' },
 };
-
-const VALUES = [
-  {
-    term: 'Craftsmanship',
-    detail:
-      'Every piece is designed with intention and engraved with care. We do not cut corners — we cut wood, precisely, and finish everything by hand.',
-  },
-  {
-    term: 'Meaning',
-    detail:
-      'We create pieces that carry weight — scripture, landmarks, personal moments. Things worth keeping. Things worth giving.',
-  },
-  {
-    term: 'Excellence',
-    detail:
-      'We only ship what we would be proud to display in our own home. If it is not right, we run it again until it is.',
-  },
-];
 
 export default function AboutPage() {
   return (
     <>
-      <section className="section section--hero">
-        <div className="container">
-          <div className="ml-section-head">
-            <p className="ml-section-head__eyebrow">Mozart Laser · California</p>
-            <h1 className="ml-section-head__title">
-              About <em>us</em>
-            </h1>
-            <p className="ml-section-head__lede">
-              Small business. Big care. Made in California.
+      <section className="wrap section">
+        <div className="head">
+          <p className="eyebrow">Mozart Laser · California</p>
+          <h1>
+            Every mark the laser makes is a mark that <em>lasts</em>
+          </h1>
+          <p className="lede">
+            Small business. Big care. Hand-finished in California, one piece at a time.
+          </p>
+        </div>
+      </section>
+
+      <div className="wrap">
+        <ul className="spec">
+          {PROMISES.map((promise) => (
+            <li key={promise}>{promise}</li>
+          ))}
+        </ul>
+      </div>
+
+      <section className="wrap section">
+        <div className="craft">
+          <div>
+            <p className="eyebrow">Who we are</p>
+            <p className="craft__quote">
+              A small Christian studio in <em>California</em>
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="section--tight">
-        <div className="container">
-          <dl className="ml-trust">
-            <div className="ml-trust__item">
-              <dt className="ml-trust__term">Hand-finished</dt>
-              <dd className="ml-trust__detail">Every piece, without exception</dd>
-            </div>
-            <div className="ml-trust__item">
-              <dt className="ml-trust__term">3–5 day turnaround</dt>
-              <dd className="ml-trust__detail">Cut and finished to order</dd>
-            </div>
-            <div className="ml-trust__item">
-              <dt className="ml-trust__term">Made in California</dt>
-              <dd className="ml-trust__detail">One studio, one pair of hands</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="container split">
-          <div className="ml-section-head">
-            <p className="ml-section-head__eyebrow">Who we are</p>
-            <h2 className="ml-section-head__title">
-              A small Christian <em>studio</em> in California
-            </h2>
-            <p className="ml-section-head__lede">
-              Mozart Laser is a small Christian company based in California dedicated
-              to bringing beauty into people&rsquo;s homes through laser engravings.
-            </p>
-            <p className="body text-muted">
-              We believe craftsmanship matters, meaning matters, and the things you
+          <div>
+            <p>
+              Mozart Laser is a small Christian company based in California dedicated to
+              bringing beauty into people&rsquo;s homes through laser engravings. We
+              believe craftsmanship matters, meaning matters, and the things you
               surround yourself with should point to what is good, true, and lasting.
+            </p>
+            <p>
               Every piece we create is designed with intention and engraved with care —
               whether it is a meaningful scripture plaque, a custom keepsake, or a
-              timeless decorative piece.
+              timeless decorative piece. Whether you start from a product we&rsquo;ve
+              designed or a blank page with your own idea, we treat every order as a
+              collaboration.
+            </p>
+            <dl className="stats">
+              <div>
+                <dt>100%</dt>
+                <dd>Hand-finished</dd>
+              </div>
+              <div>
+                <dt>3–5</dt>
+                <dd>Day turnaround</dd>
+              </div>
+              <div>
+                <dt>∞</dt>
+                <dd>Custom orders</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <hr className="rule" />
+
+      <section className="wrap section">
+        <div className="head">
+          <p className="eyebrow">What we hold to</p>
+          <h2>
+            Three things we do not <em>bend</em> on
+          </h2>
+        </div>
+        <div className="steps">
+          <div className="step" data-reveal>
+            <span className="step__n">01</span>
+            <h3>Craftsmanship</h3>
+            <p>
+              Every piece is designed with intention and engraved with care. We
+              don&rsquo;t cut corners — we cut wood, precisely, and finish everything by
+              hand.
             </p>
           </div>
-          <div className="split__media">
-            <Image
-              src="/media/workshop.jpeg"
-              alt="The Mozart Laser workshop, with finished pieces on the bench"
-              width={1200}
-              height={900}
-              sizes="(max-width: 900px) 100vw, 560px"
-            />
+          <div className="step" data-reveal data-reveal-delay={60}>
+            <span className="step__n">02</span>
+            <h3>Meaning</h3>
+            <p>
+              We create pieces that carry weight — scripture, landmarks, personal
+              moments. Things worth keeping. Things worth giving.
+            </p>
+          </div>
+          <div className="step" data-reveal data-reveal-delay={120}>
+            <span className="step__n">03</span>
+            <h3>Excellence</h3>
+            <p>
+              We only ship what we&rsquo;d be proud to display in our own home. If
+              it&rsquo;s not right, we run it again until it is.
+            </p>
           </div>
         </div>
       </section>
 
-      <section className="section section--sunken">
-        <div className="container">
-          <div className="ml-section-head section__head">
-            <p className="ml-section-head__eyebrow">What we hold to</p>
-            <h2 className="ml-section-head__title">
-              Three things we do not <em>bend</em> on
-            </h2>
-          </div>
-          <div className="product-grid">
-            {VALUES.map((value) => (
-              <div key={value.term} className="stack" style={{ gap: 'var(--space-3)' }}>
-                <hr className="rule" />
-                <h3 className="display-s">{value.term}</h3>
-                <p className="body text-muted">{value.detail}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <hr className="rule" />
 
-      <section className="section">
-        <div className="container">
-          <figure className="ml-quote">
-            <blockquote className="ml-quote__text">
-              Our mission is to create engraved pieces that inspire faith, spark
-              conversation, and stand the test of time.
+      <section className="wrap section">
+        <div className="quotes quotes--lead">
+          <figure data-reveal>
+            <blockquote>
+              “Our mission is to create engraved pieces that inspire faith, spark
+              conversation, and stand the test of time.”
             </blockquote>
-            <figcaption className="ml-quote__attr">
-              Caleb · founder · Mozart Laser
-            </figcaption>
+            <figcaption>— Caleb, founder</figcaption>
           </figure>
         </div>
       </section>
 
-      <section className="section section--sunken">
-        <div className="container">
-          <div className="ml-section-head section__head section__head--center">
-            <p className="ml-section-head__eyebrow">Get in touch</p>
-            <h2 className="ml-section-head__title">
-              Let&rsquo;s make something <em>together</em>
-            </h2>
-            <p className="ml-section-head__lede">
-              Questions, custom orders, or just want to say hi — we would love to hear
-              from you. Every order is handled personally, from design to finishing.
-            </p>
-          </div>
-          <div className="row" style={{ justifyContent: 'center' }}>
-            <Link href="/create" className="ml-btn ml-btn--lg">
-              Start your order
-            </Link>
-            <a
-              href="mailto:mozartlaser@gmail.com"
-              className="ml-btn ml-btn--secondary ml-btn--lg"
-            >
-              mozartlaser@gmail.com
-            </a>
-          </div>
+      <section className="band">
+        <div className="wrap band__in">
+          <p className="eyebrow">Get in touch</p>
+          <h2>
+            Let&rsquo;s make something <em>together</em>
+          </h2>
+          <p>
+            Questions, custom orders, or just want to say hi — we&rsquo;d love to hear
+            from you. Every order is handled personally, from design to finishing.
+          </p>
+          <Link className="btn btn--inverse btn--lg" href="/create">
+            Start Your Custom Order
+          </Link>
+          <p className="band__or">
+            Or email <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          </p>
         </div>
       </section>
     </>

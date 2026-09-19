@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { AddToCart } from '@/components/AddToCart';
+import { ProductBuy } from '@/components/ProductBuy';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
 import { formatPrice, getProduct, getProducts, getRelated } from '@/lib/products';
@@ -16,7 +16,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 
   return {
     title: product.name,
-    // The old site shipped the same description on every product page.
+    // The old site shipped one description, about a train, on every product.
     description: `${product.description.slice(0, 150)}… ${product.material}. Ships in 3–5 days.`,
     alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
@@ -32,17 +32,16 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const product = getProduct(params.slug);
   if (!product) notFound();
 
-  const related = getRelated(product.slug);
-  const saving = product.compareAtPrice
-    ? product.compareAtPrice - product.price
-    : null;
+  const related = getRelated(product.slug, 3);
+  const onSale = product.compareAtPrice !== null;
+  const woodName = product.wood ?? product.material.split('·')[0]?.trim().toLowerCase();
 
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     description: product.description,
-    image: product.images,
+    image: product.images.map((src) => `https://mozartlaser.com${src}`),
     material: product.material.split('·')[0]?.trim(),
     brand: { '@type': 'Brand', name: 'Mozart Laser' },
     offers: {
@@ -50,6 +49,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       price: product.price.toFixed(2),
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
+      itemCondition: 'https://schema.org/NewCondition',
       url: `https://mozartlaser.com/products/${product.slug}`,
     },
   };
@@ -61,54 +61,48 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
 
-      <section className="section">
-        <div className="container product">
+      <section className="wrap section">
+        <div className="pdp">
           <ProductGallery
             images={product.images}
             name={product.name}
-            material={product.material}
+            wood={woodName}
           />
 
-          <div className="product__info">
+          <div className="pdp__info">
             <div className="stack" style={{ gap: 'var(--space-3)' }}>
-              <p className="eyebrow" style={{ color: 'var(--ink-subtle)' }}>
+              <p className="eyebrow">
                 <Link href={`/products?category=${encodeURIComponent(product.category)}`}>
-                  {product.category.toUpperCase()}
+                  {product.category}
                 </Link>
               </p>
-              <h1 className="product__title">{product.name}</h1>
+              <h1 className="pdp__title">{product.name}</h1>
             </div>
 
-            <div className="product__price-row">
-              <span className="product__price">{formatPrice(product.price)}</span>
-              {product.compareAtPrice ? (
+            <p className="pdp__price">
+              {onSale ? (
                 <>
-                  <span className="product__price-was">
-                    {formatPrice(product.compareAtPrice)}
-                  </span>
-                  <span className="ml-badge">
-                    SAVE {formatPrice(saving ?? 0)}
-                  </span>
+                  <s>{formatPrice(product.compareAtPrice as number)}</s>
+                  <span className="now now--sale">{formatPrice(product.price)}</span>
                 </>
-              ) : null}
-            </div>
+              ) : (
+                <span className="now">{formatPrice(product.price)}</span>
+              )}
+            </p>
 
-            <p className="product__meta">
+            <p className="pdp__meta">
               {product.wood ? (
-                <span
-                  className={`ml-swatch ml-swatch--${product.wood}`}
-                  aria-hidden="true"
-                />
+                <span className={`swatch swatch--${product.wood}`} aria-hidden="true" />
               ) : null}
               {product.material}
             </p>
 
             <hr className="rule" />
 
-            <p className="product__desc">{product.description}</p>
+            <p className="pdp__desc">{product.description}</p>
 
             {product.bullets.length > 0 ? (
-              <ul className="product__bullets">
+              <ul className="pdp__bullets">
                 {product.bullets.map((bullet) => (
                   <li key={bullet}>
                     <span>{bullet}</span>
@@ -117,31 +111,30 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               </ul>
             ) : null}
 
-            <AddToCart product={product} />
+            <ProductBuy product={product} />
 
-            {/* The homepage carries the trust row, so this page states the
-                same promises as a line rather than repeating the component. */}
-            <p className="product__note">
-              Design preview · Ships in 3–5 days · Hand-finished in California
+            {/* The homepage carries the spec strip, so this states the same
+                promises as a line rather than repeating the component. */}
+            <p className="pdp__note">
+              Design preview included · Ships in 3–5 days · Hand-finished in California
             </p>
           </div>
         </div>
       </section>
 
       {related.length > 0 ? (
-        <section className="section section--sunken">
-          <div className="container">
-            <div className="ml-section-head section__head">
-              <p className="ml-section-head__eyebrow">More from the shop</p>
-              <h2 className="ml-section-head__title">
-                You might also <em>like</em>
-              </h2>
-            </div>
-            <div className="product-grid">
-              {related.map((item) => (
-                <ProductCard key={item.slug} product={item} />
-              ))}
-            </div>
+        <section className="wrap section">
+          <hr className="rule" style={{ marginBottom: 'var(--space-8)' }} />
+          <div className="head head--sub">
+            <p className="eyebrow">More from the shop</p>
+            <h2>
+              You might also <em>like</em>
+            </h2>
+          </div>
+          <div className="grid grid--three">
+            {related.map((item, index) => (
+              <ProductCard key={item.slug} product={item} revealDelay={index * 60} />
+            ))}
           </div>
         </section>
       ) : null}

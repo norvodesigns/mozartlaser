@@ -1,176 +1,287 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ProductCard } from '@/components/ProductCard';
-import { getProducts } from '@/lib/products';
-import { posts } from '@/lib/posts';
+import { Newsletter } from '@/components/Newsletter';
+import { imageSize } from '@/lib/image-sizes';
+import { getProduct, getProducts } from '@/lib/products';
+import { PROMISES } from '@/lib/site';
+
+/** The shelf: three real pieces stood on one line. Optical sizes, not equal ones. */
+const SHELF = [
+  { slug: 'wanderer-bookmark', variant: 'a', caption: 'Wanderer Bookmark' },
+  { slug: 'golden-gate-bridge', variant: 'b', caption: 'Golden Gate Bridge Plaque' },
+  { slug: 'dragon-coin', variant: 'c', caption: 'Book Dragon Coin' },
+] as const;
+
+const FEATURED = [
+  'wanderer-bookmark',
+  'np-coasters',
+  'golden-gate-bridge',
+  'leaf-bookmark',
+  'dragon-coin',
+  'adventurers-bookmark',
+];
+
+const STEPS = [
+  {
+    n: '01',
+    title: 'You Share Your Vision',
+    body: 'Tell us what you want — a name, a date, a photo, a design. Our Create tool or a simple message is all it takes.',
+  },
+  {
+    n: '02',
+    title: 'We Design & Preview',
+    body: 'We compose your design and send a visual proof before anything is engraved. You approve it — or we refine it.',
+  },
+  {
+    n: '03',
+    title: 'Precision Engraving',
+    body: 'Your piece is laser-engraved on premium hardwood with professional equipment, hand-finished in California.',
+  },
+  {
+    n: '04',
+    title: 'Delivered to Your Door',
+    body: 'Carefully packaged and shipped within 3–5 business days. A lasting keepsake, ready to give.',
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    quote:
+      '“The detail on the Golden Gate Bridge plaque is unreal. It looks like something you’d find in a high-end boutique, not a small business.”',
+    who: '— Sarah',
+  },
+  {
+    quote:
+      '“Bought the Wooden Dove Plaque as a personalized gift for my mom. She actually teared up. The quality and the scripture on it made it feel really special.”',
+    who: '— James',
+  },
+  {
+    quote:
+      '“Came quickly, packaged beautifully, and the engraving was crisp and clean. Already ordered a second one.”',
+    who: '— Matt',
+  },
+];
 
 export default function HomePage() {
   const products = getProducts();
-  // The pieces that best show the range: a board, a plaque, a bookmark, a set.
-  const featuredSlugs = ['ship', 'moon', 'wanderer-bookmark', 'np-coasters'];
-  const featured = featuredSlugs
-    .map((slug) => products.find((p) => p.slug === slug))
-    .filter((p): p is NonNullable<typeof p> => Boolean(p));
-  const latest = posts[0];
+  const featured = FEATURED.map((slug) => getProduct(slug)).filter(
+    (p): p is NonNullable<typeof p> => Boolean(p),
+  );
+  const shelf = SHELF.map((entry) => ({ ...entry, product: getProduct(entry.slug) }));
 
   return (
     <>
       {/* Hero — the one display-xl and the one ember element above the fold. */}
-      <section className="section section--hero">
-        <div className="container hero">
-          <div className="hero__copy">
-            <p className="eyebrow" style={{ color: 'var(--ember)' }}>
-              PRECISION LASER ENGRAVED
-            </p>
-            <h1 className="hero__title">
-              Wood that keeps a <em>record</em>
-            </h1>
-            <p className="hero__lede">
-              Plaques, bookmarks, coasters and cutting boards, engraved in poplar,
-              pine and acacia. Every piece crafted with care, built to last.
-            </p>
-            <div className="hero__actions">
-              <Link href="/products" className="ml-btn ml-btn--lg">
-                Browse products
-              </Link>
-              <Link href="/create" className="ml-btn ml-btn--secondary ml-btn--lg">
-                Make something custom
-              </Link>
-            </div>
-          </div>
-          <div className="hero__media">
-            <Image
-              src="/products/ship/display.jpg"
-              alt="An acacia cutting board with a ship engraved into the grain, on a workbench"
-              width={1200}
-              height={1500}
-              priority
-              sizes="(max-width: 900px) 100vw, 560px"
-            />
-          </div>
+      <section className="wrap hero">
+        <p className="eyebrow">Custom laser engraving</p>
+        <h1>
+          Precision <em>Laser</em> Engraved
+        </h1>
+        <p className="hero__blurb">
+          Mozart Laser is a California-based studio dedicated to the art of precision
+          engraving. We work with premium hardwoods to create gifts and decor that carry
+          meaning — personalized for the people who matter most.
+        </p>
+        <div className="hero__cta">
+          <Link className="btn btn--lg" href="/create">
+            Create Your Gift
+          </Link>
+          <Link className="btn btn--secondary btn--lg" href="/products">
+            Browse Products
+          </Link>
         </div>
+        <p className="hero__assure">
+          Free personalization · Design preview included · Ships in 3–5 days
+        </p>
       </section>
 
-      {/* The three promises, held between two hairlines. Once per page. */}
-      <section className="section--tight">
-        <div className="container">
-          <dl className="ml-trust">
-            <div className="ml-trust__item">
-              <dt className="ml-trust__term">Hand-finished in California</dt>
-              <dd className="ml-trust__detail">Sanded, sealed and polished by hand</dd>
-            </div>
-            <div className="ml-trust__item">
-              <dt className="ml-trust__term">Ships in 3–5 days</dt>
-              <dd className="ml-trust__detail">Cut and finished to order, not stocked</dd>
-            </div>
-            <div className="ml-trust__item">
-              <dt className="ml-trust__term">Design preview included</dt>
-              <dd className="ml-trust__detail">You approve the proof before we cut</dd>
-            </div>
-          </dl>
+      <div className="wrap">
+        <div className="shelf">
+          {shelf.map(({ product, variant, caption }) =>
+            product ? (
+              <figure key={product.slug} className={`shelf--${variant}`}>
+                <Image
+                  src={product.images[0]}
+                  alt={`${product.name}, engraved ${product.wood ?? 'hardwood'}`}
+                  width={imageSize(product.images[0]).w}
+                  height={imageSize(product.images[0]).h}
+                  priority
+                  sizes="(max-width: 420px) 30vw, (max-width: 860px) 26vw, 320px"
+                />
+                <figcaption>{caption}</figcaption>
+              </figure>
+            ) : null,
+          )}
         </div>
-      </section>
 
-      <section className="section">
-        <div className="container">
-          <div className="ml-section-head section__head">
-            <p className="ml-section-head__eyebrow">Made this month</p>
-            <h2 className="ml-section-head__title">
-              Crafted <em>pieces</em>
+        <ul className="spec">
+          {PROMISES.map((promise) => (
+            <li key={promise}>{promise}</li>
+          ))}
+        </ul>
+      </div>
+
+      <section className="wrap section" id="products">
+        <div className="head head--split">
+          <div>
+            <p className="eyebrow">Featured Work</p>
+            <h2>
+              Gallery of <em>Crafted Pieces</em>
             </h2>
-            <p className="ml-section-head__lede">
-              Four of the twenty-two pieces in the shop. Each one is cut, finished and
-              packed by hand.
-            </p>
           </div>
-          <div className="product-grid">
-            {featured.map((product, index) => (
-              <ProductCard key={product.slug} product={product} priority={index < 2} />
-            ))}
-          </div>
-          <div className="row" style={{ marginTop: 'var(--space-7)' }}>
-            <Link href="/products" className="ml-btn ml-btn--secondary">
-              See all products
-            </Link>
-          </div>
+          <Link className="textlink" href="/products">
+            View all products →
+          </Link>
         </div>
-      </section>
-
-      {/* Personalisation: text beside the image, never over it. */}
-      <section className="section section--sunken">
-        <div className="container split">
-          <div className="ml-section-head">
-            <p className="ml-section-head__eyebrow">Free personalization</p>
-            <h2 className="ml-section-head__title">
-              Tell us what you <em>want</em>
-            </h2>
-            <p className="ml-section-head__lede">
-              A name, a date, a photo, a design. Send it over and we will draw up a
-              proof before anything is cut.
-            </p>
-            <div className="row" style={{ marginTop: 'var(--space-3)' }}>
-              <Link href="/create" className="ml-btn">
-                Start your order
-              </Link>
-            </div>
-          </div>
-          <div className="split__media">
-            <Image
-              src="/products/animal-plaque/display.jpg"
-              alt="A pet photograph engraved into a pine plaque, held in one hand for scale"
-              width={1200}
-              height={900}
-              sizes="(max-width: 900px) 100vw, 560px"
+        <div className="grid grid--three">
+          {featured.map((product, index) => (
+            <ProductCard
+              key={product.slug}
+              product={product}
+              revealDelay={(index % 3) * 60}
             />
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* The quote is the section: space-9 above and below, nothing beside it. */}
-      <section className="section">
-        <div className="container">
-          <figure className="ml-quote">
-            <blockquote className="ml-quote__text">
-              Craftsmanship matters. Meaning matters. The things you surround yourself
-              with should point to what is good, true, and lasting.
+      <hr className="rule" />
+
+      <section className="wrap section">
+        <div className="head">
+          <p className="eyebrow">Our Process</p>
+          <h2>
+            From Idea to <em>Heirloom</em>
+          </h2>
+        </div>
+        <div className="steps">
+          {STEPS.map((step, index) => (
+            <div className="step" key={step.n} data-reveal data-reveal-delay={index * 60}>
+              <span className="step__n">{step.n}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <hr className="rule" />
+
+      <section className="wrap section">
+        <div className="head">
+          <p className="eyebrow">What Customers Say</p>
+          <h2>
+            Words from <em>Real People</em>
+          </h2>
+        </div>
+        <div className="quotes quotes--lead">
+          <figure data-reveal>
+            <blockquote>
+              “I found Mozart Laser last minute before Mother&rsquo;s Day. The owner
+              suggested switching to vertical orientation to better fit my photo — a
+              detail I never would have thought of. My mom loved it. 10/10, between the
+              carving and the support.”
             </blockquote>
-            <figcaption className="ml-quote__attr">
-              Caleb · founder · Mozart Laser
-            </figcaption>
+            <figcaption>— Peyton</figcaption>
           </figure>
         </div>
+        <div className="quotes">
+          {TESTIMONIALS.map((item, index) => (
+            <figure key={item.who} data-reveal data-reveal-delay={index * 60}>
+              <blockquote>{item.quote}</blockquote>
+              <figcaption>{item.who}</figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
-      {latest ? (
-        <section className="section section--sunken">
-          <div className="container split split--reverse">
-            <div className="ml-section-head">
-              <p className="ml-section-head__eyebrow">From the journal</p>
-              <h2
-                className="ml-section-head__title"
-                dangerouslySetInnerHTML={{ __html: latest.titleHtml }}
-              />
-              <p className="ml-section-head__lede">{latest.subtitle}</p>
-              <div className="row" style={{ marginTop: 'var(--space-3)' }}>
-                <Link href={`/blog/${latest.slug}`} className="ml-btn ml-btn--secondary">
-                  Read the story
-                </Link>
-              </div>
-            </div>
-            {latest.hero ? (
-              <div className="split__media">
-                <Image
-                  src={latest.hero.src}
-                  alt={latest.hero.alt}
-                  width={1200}
-                  height={900}
-                  sizes="(max-width: 900px) 100vw, 560px"
-                />
-              </div>
-            ) : null}
+      <hr className="rule" />
+
+      <section className="wrap section" id="about">
+        <div className="craft">
+          <div>
+            <p className="eyebrow">Craftsmanship</p>
+            <p className="craft__quote">
+              “Every mark the laser makes is a mark that <em>lasts</em>.”
+            </p>
           </div>
-        </section>
-      ) : null}
+          <div>
+            <p>
+              Mozart Laser is a California-based studio dedicated to the art of precision
+              engraving. We work with premium hardwoods to create gifts and decor that
+              carry meaning — personalized for the people who matter most.
+            </p>
+            <p>
+              Whether you start from a product we&rsquo;ve designed or a blank page with
+              your own idea, we treat every order as a collaboration. The result is
+              something that feels genuinely made — because it is.
+            </p>
+            <dl className="stats">
+              <div>
+                <dt>100%</dt>
+                <dd>Hand-finished</dd>
+              </div>
+              <div>
+                <dt>3–5</dt>
+                <dd>Day turnaround</dd>
+              </div>
+              <div>
+                <dt>∞</dt>
+                <dd>Custom orders</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <section className="wrap" style={{ paddingBottom: 'var(--space-9)' }}>
+        <div className="promise" data-reveal>
+          <h2>Not happy with your order? We&rsquo;ll make it right.</h2>
+          <p>
+            Every Mozart Laser piece is backed by our satisfaction guarantee — reach out
+            and we&rsquo;ll fix it, no hassle.
+          </p>
+        </div>
+      </section>
+
+      <section className="band" id="create">
+        <div className="wrap band__in">
+          <p className="eyebrow">Made to order</p>
+          <h2>
+            Ready to <em>Create?</em>
+          </h2>
+          <p>
+            Tell us your idea — we handle everything else. Custom gifts starting at
+            $5.99. Free personalization on every order.
+          </p>
+          <Link className="btn btn--inverse btn--lg" href="/create">
+            Start Your Custom Order
+          </Link>
+          <p className="band__or">
+            Or <Link href="/products">browse ready-made products</Link>
+          </p>
+        </div>
+      </section>
+
+      <div className="wrap">
+        <Newsletter />
+      </div>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            itemListElement: products.slice(0, 6).map((product, index) => ({
+              '@type': 'ListItem',
+              position: index + 1,
+              url: `https://mozartlaser.com/products/${product.slug}`,
+              name: product.name,
+            })),
+          }),
+        }}
+      />
     </>
   );
 }

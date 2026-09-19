@@ -1,58 +1,76 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { imageSize } from '@/lib/image-sizes';
 import { formatPrice, type Product } from '@/lib/products';
 
-/** The whole tile is one link, so there is never a second action inside it. */
+/** Wood name plus one short fact — the card stays terse, the PDP carries the rest. */
+function metaLine(product: Product): string {
+  const parts = product.material.split('·').map((part) => part.trim());
+  const wood = product.wood
+    ? product.wood.charAt(0).toUpperCase() + product.wood.slice(1)
+    : parts[0];
+  const qualifier = parts[1] && parts[1].length <= 18 ? parts[1] : null;
+  return [wood, qualifier].filter(Boolean).join(' · ');
+}
+
+/** The whole tile is one link, so the entire card is the target. */
 export function ProductCard({
   product,
   priority = false,
+  revealDelay,
 }: {
   product: Product;
   priority?: boolean;
+  revealDelay?: number;
 }) {
   const [hero] = product.images;
-  const dimension = product.material.split('·')[1]?.trim();
-  const woodName = product.wood
-    ? product.wood.charAt(0).toUpperCase() + product.wood.slice(1)
-    : product.material.split('·')[0]?.trim();
+  const onSale = product.compareAtPrice !== null;
+  const woodName = product.wood ?? product.material.split('·')[0]?.trim().toLowerCase();
 
   return (
-    <Link href={`/products/${product.slug}`} className="ml-card">
-      <div className="ml-card__media">
+    <Link
+      href={`/products/${product.slug}`}
+      className="card"
+      data-reveal
+      data-reveal-delay={revealDelay}
+    >
+      <div className="card__media">
+        {/* One tag only — two would stack in the same corner. */}
+        {onSale ? (
+          <span className="tag">Sale</span>
+        ) : product.custom ? (
+          <span className="tag">Made to order</span>
+        ) : null}
         {hero ? (
           <Image
             src={hero}
-            alt={`${product.name} in ${woodName?.toLowerCase() ?? 'wood'}`}
-            width={800}
-            height={600}
-            className="card-media-img"
-            sizes="(max-width: 560px) 50vw, (max-width: 1000px) 33vw, 280px"
+            alt={`${product.name}, engraved ${woodName}`}
+            width={imageSize(hero).w}
+            height={imageSize(hero).h}
+            sizes="(max-width: 560px) 45vw, (max-width: 1000px) 30vw, 260px"
             priority={priority}
           />
         ) : null}
       </div>
-      <div className="ml-card__body">
-        {product.custom ? (
-          <span className="ml-badge" style={{ alignSelf: 'flex-start' }}>
-            MADE TO ORDER
-          </span>
-        ) : null}
-        <h3 className="ml-card__title">{product.name}</h3>
-        <p className="ml-card__meta">
+      <div className="card__body">
+        <h3 className="card__title">{product.name}</h3>
+        <p className="card__meta">
           {product.wood ? (
-            <span className={`ml-swatch ml-swatch--${product.wood}`} aria-hidden="true" />
+            <span className={`swatch swatch--${product.wood}`} aria-hidden="true" />
           ) : null}
-          {[woodName, dimension].filter(Boolean).join(' · ')}
+          {metaLine(product)}
         </p>
-        <p className="ml-card__price">
-          {formatPrice(product.price)}
-          {product.compareAtPrice ? (
-            <span className="text-subtle">
-              {' '}
-              <s>{formatPrice(product.compareAtPrice)}</s>
-            </span>
-          ) : null}
+        <p className="card__price">
+          {onSale ? (
+            <>
+              <s>{formatPrice(product.compareAtPrice as number)}</s>
+              <span className="sale">{formatPrice(product.price)}</span>
+            </>
+          ) : (
+            <span>{formatPrice(product.price)}</span>
+          )}
         </p>
+        <span className="card__cta">View Product</span>
       </div>
     </Link>
   );

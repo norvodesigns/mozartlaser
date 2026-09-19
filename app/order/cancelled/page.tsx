@@ -9,22 +9,22 @@ export const metadata: Metadata = {
 
 export default function CancelledPage() {
   return (
-    <section className="container status-page">
-      <div className="ml-section-head">
-        <p className="ml-section-head__eyebrow">Checkout cancelled</p>
-        <h1 className="ml-section-head__title">
+    <section className="wrap status">
+      <div className="head head--center">
+        <p className="eyebrow">Checkout cancelled</p>
+        <h1>
           Nothing was <em>charged</em>
         </h1>
-        <p className="ml-section-head__lede">
+        <p className="lede">
           Your cart is still here, exactly as you left it. Pick up where you stopped,
           or email us if something in checkout did not work.
         </p>
       </div>
       <div className="row" style={{ justifyContent: 'center' }}>
-        <Link href="/products" className="ml-btn">
+        <Link href="/products" className="btn">
           Back to the shop
         </Link>
-        <a href="mailto:mozartlaser@gmail.com" className="ml-btn ml-btn--secondary">
+        <a href="mailto:mozartlaser@gmail.com" className="btn btn--secondary">
           Email the studio
         </a>
       </div>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { imageSize } from '@/lib/image-sizes';
 import { getPost, posts } from '@/lib/posts';
 
 export function generateStaticParams() {
@@ -30,91 +31,75 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   if (!post) notFound();
 
   return (
-    <article className="section">
-      <div className="container">
-        <div className="ml-section-head section__head">
-          <p className="ml-section-head__eyebrow">
-            {[post.tag, post.date].filter(Boolean).join(' · ')}
-          </p>
-          <h1
-            className="ml-section-head__title"
-            dangerouslySetInnerHTML={{ __html: post.titleHtml }}
+    <article className="wrap section">
+      <div className="head">
+        <p className="eyebrow">{[post.tag, post.date].filter(Boolean).join(' · ')}</p>
+        <h1
+          className="post-item__title"
+          style={{ fontSize: 44, lineHeight: '48px', fontWeight: 300 }}
+          dangerouslySetInnerHTML={{ __html: post.titleHtml }}
+        />
+        {post.subtitle ? <p className="lede">{post.subtitle}</p> : null}
+      </div>
+
+      {post.hero ? (
+        <figure className="post-hero">
+          <Image
+            src={post.hero.src}
+            alt={post.hero.alt}
+            width={imageSize(post.hero.src).w}
+            height={imageSize(post.hero.src).h}
+            sizes="(max-width: 1160px) 92vw, 1112px"
+            priority
           />
-          {post.subtitle ? (
-            <p className="ml-section-head__lede">{post.subtitle}</p>
+          {post.heroCaption ? (
+            <figcaption className="caption">{post.heroCaption}</figcaption>
           ) : null}
-        </div>
+        </figure>
+      ) : null}
 
-        {post.hero ? (
-          <figure style={{ marginBottom: 'var(--space-7)' }}>
-            <Image
-              src={post.hero.src}
-              alt={post.hero.alt}
-              width={1400}
-              height={900}
-              sizes="(max-width: 1200px) 100vw, 1200px"
-              priority
-            />
-            {post.heroCaption ? (
-              <figcaption
-                className="caption text-subtle"
-                style={{ marginTop: 'var(--space-3)' }}
-              >
-                {post.heroCaption}
-              </figcaption>
-            ) : null}
-          </figure>
-        ) : null}
-
-        <div className="prose">
-          {post.blocks.map((block, index) => {
-            if (block.type === 'p') {
-              return (
-                <p key={index} dangerouslySetInnerHTML={{ __html: block.html }} />
-              );
-            }
-            if (block.type === 'quote') {
-              return (
-                <figure key={index} className="ml-quote" style={{ marginBlock: 'var(--space-6)' }}>
-                  <blockquote className="ml-quote__text">{block.text}</blockquote>
-                </figure>
-              );
-            }
-            if (block.type === 'image') {
-              return (
-                <Image
-                  key={index}
-                  src={block.src}
-                  alt={block.alt}
-                  width={1200}
-                  height={900}
-                  sizes="(max-width: 720px) 100vw, 640px"
-                />
-              );
-            }
+      <div className="prose">
+        {post.blocks.map((block, index) => {
+          if (block.type === 'p') {
+            return <p key={index} dangerouslySetInnerHTML={{ __html: block.html }} />;
+          }
+          if (block.type === 'quote') {
+            return <blockquote key={index}>{block.text}</blockquote>;
+          }
+          if (block.type === 'image') {
             return (
-              <video
+              <Image
                 key={index}
                 src={block.src}
-                controls
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                style={{ maxWidth: 320, marginInline: 'auto', width: '100%' }}
+                alt={block.alt}
+                width={imageSize(block.src).w}
+                height={imageSize(block.src).h}
+                sizes="(max-width: 720px) 92vw, 640px"
               />
             );
-          })}
-        </div>
+          }
+          return (
+            <video
+              key={index}
+              src={block.src}
+              controls
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              style={{ maxWidth: 320, marginInline: 'auto', width: '100%' }}
+            />
+          );
+        })}
+      </div>
 
-        <div className="row" style={{ marginTop: 'var(--space-8)' }}>
-          <Link href="/blog" className="ml-btn ml-btn--secondary">
-            All posts
-          </Link>
-          <Link href="/products" className="ml-btn ml-btn--ghost">
-            See the pieces
-          </Link>
-        </div>
+      <div className="row" style={{ marginTop: 'var(--space-8)' }}>
+        <Link href="/blog" className="btn btn--secondary">
+          All posts
+        </Link>
+        <Link href="/products" className="textlink">
+          See the pieces →
+        </Link>
       </div>
     </article>
   );

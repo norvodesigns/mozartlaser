@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useMemo, useRef, useState } from 'react';
 import { useCart } from '@/components/CartProvider';
+import { imageSize } from '@/lib/image-sizes';
 import { formatPrice, type Product } from '@/lib/products';
 import {
   BULK_THRESHOLD,
@@ -24,9 +25,12 @@ const STEPS = ['What we are making', 'The engraving', 'Your details'];
 export function CreateFlow({
   products,
   initialSlug,
+  initialText,
 }: {
   products: Product[];
   initialSlug: string | null;
+  /** Carried over when somebody typed engraving text on a product page. */
+  initialText: string;
 }) {
   const { add } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
@@ -37,7 +41,7 @@ export function CreateFlow({
   const [slug, setSlug] = useState(initialSlug ?? products[0]?.slug ?? '');
   const [blankId, setBlankId] = useState(blankForms[0]?.id ?? '');
 
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText);
   const [font, setFont] = useState('');
   const [fontSize, setFontSize] = useState('');
   const [placement, setPlacement] = useState('');
@@ -151,18 +155,18 @@ export function CreateFlow({
   if (submitted) {
     return (
       <div className="stack" style={{ gap: 'var(--space-5)' }}>
-        <div className="ml-section-head">
-          <p className="ml-section-head__eyebrow">Order started</p>
-          <h2 className="ml-section-head__title">
+        <div className="head">
+          <p className="eyebrow">Order started</p>
+          <h2>
             We have your <em>details</em>
           </h2>
-          <p className="ml-section-head__lede">
+          <p className="lede">
             Your piece is in the cart and the brief is with us. We will email a proof
             to {email} before anything is cut.
           </p>
         </div>
         <div className="row">
-          <a href="/products" className="ml-btn ml-btn--secondary">
+          <a href="/products" className="btn btn--secondary">
             Keep browsing
           </a>
         </div>
@@ -172,14 +176,14 @@ export function CreateFlow({
 
   return (
     <>
-      <ol className="steps">
+      <ol className="progress">
         {STEPS.map((label, index) => (
           <li
             key={label}
             aria-current={index === step ? 'step' : undefined}
             data-done={index < step ? 'true' : undefined}
           >
-            <span className="steps__num" aria-hidden="true">
+            <span className="progress__n" aria-hidden="true">
               {index + 1}
             </span>
             {label}
@@ -193,7 +197,7 @@ export function CreateFlow({
             <legend className="label" style={{ marginBottom: 'var(--space-3)' }}>
               Where are we starting?
             </legend>
-            <div className="option-grid">
+            <div className="options">
               <button
                 type="button"
                 className="option"
@@ -246,7 +250,7 @@ export function CreateFlow({
               <legend className="label" style={{ marginBottom: 'var(--space-3)' }}>
                 Blank stock
               </legend>
-              <div className="option-grid">
+              <div className="options">
                 {blankForms.map((form) => (
                   <button
                     key={form.id}
@@ -256,7 +260,13 @@ export function CreateFlow({
                     onClick={() => setBlankId(form.id)}
                   >
                     <span className="option__media">
-                      <Image src={form.image} alt="" width={360} height={270} />
+                      <Image
+                        src={form.image}
+                        alt=""
+                        width={imageSize(form.image).w}
+                        height={imageSize(form.image).h}
+                        sizes="220px"
+                      />
                     </span>
                     <span className="option__name">{form.name}</span>
                     <span className="option__price">{formatPrice(form.price)} each</span>
@@ -267,7 +277,7 @@ export function CreateFlow({
           )}
 
           <div className="form-actions form-actions--end">
-            <button type="button" className="ml-btn" onClick={goNext}>
+            <button type="button" className="btn" onClick={goNext}>
               Next
             </button>
           </div>
@@ -450,10 +460,10 @@ export function CreateFlow({
           </div>
 
           <div className="form-actions">
-            <button type="button" className="ml-btn ml-btn--secondary" onClick={goBack}>
+            <button type="button" className="btn btn--secondary" onClick={goBack}>
               Back
             </button>
-            <button type="button" className="ml-btn" onClick={goNext}>
+            <button type="button" className="btn" onClick={goNext}>
               Next
             </button>
           </div>
@@ -555,10 +565,10 @@ export function CreateFlow({
           </dl>
 
           <div className="form-actions">
-            <button type="button" className="ml-btn ml-btn--secondary" onClick={goBack}>
+            <button type="button" className="btn btn--secondary" onClick={goBack}>
               Back
             </button>
-            <button type="button" className="ml-btn ml-btn--lg" onClick={handleSubmit}>
+            <button type="button" className="btn btn--lg" onClick={handleSubmit}>
               Add to cart
             </button>
           </div>

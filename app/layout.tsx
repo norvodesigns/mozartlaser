@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Cormorant_Garamond, Work_Sans } from 'next/font/google';
 import { CartProvider } from '@/components/CartProvider';
 import { CartDrawer } from '@/components/CartDrawer';
+import { EmailFlyout } from '@/components/EmailFlyout';
+import { Reveal } from '@/components/Reveal';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 
@@ -9,6 +11,8 @@ import '@/styles/tokens.css';
 import '@/styles/components.css';
 import '@/styles/site.css';
 
+// Only the weights the system uses. next/font self-hosts these, so there is no
+// render-blocking request to Google and no preconnect to pay for.
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
@@ -29,19 +33,27 @@ const SITE_URL = 'https://mozartlaser.com';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Mozart Laser — laser engraved wood, hand-finished in California',
+    default: 'Custom Laser Engraved Gifts & Home Decor | Mozart Laser – California',
     template: '%s | Mozart Laser',
   },
   description:
-    'Laser engraved plaques, bookmarks, coasters and cutting boards in poplar, pine and acacia. Every piece crafted with care, built to last. Ships in 3–5 days.',
+    'Mozart Laser is a California-based studio dedicated to the art of precision engraving. Custom laser-engraved gifts and home decor on premium hardwood.',
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
     siteName: 'Mozart Laser',
     url: SITE_URL,
-    title: 'Mozart Laser — laser engraved wood, hand-finished in California',
+    title: 'Custom Laser Engraved Gifts & Home Decor | Mozart Laser – California',
     description:
-      'Laser engraved plaques, bookmarks, coasters and cutting boards. Every piece crafted with care, built to last.',
+      'Custom laser-engraved gifts and home decor on premium hardwood. Hand-finished in California, ships in 3–5 days.',
+    images: ['/brand/wordmark-ink.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Custom Laser Engraved Gifts & Home Decor | Mozart Laser',
+    description:
+      'Custom laser-engraved gifts and home decor on premium hardwood. Hand-finished in California.',
+    images: ['/brand/wordmark-ink.png'],
   },
   robots: { index: true, follow: true },
 };
@@ -51,6 +63,7 @@ const ORGANIZATION_SCHEMA = {
   '@type': 'LocalBusiness',
   name: 'Mozart Laser',
   url: SITE_URL,
+  email: 'mozartlaser@gmail.com',
   address: {
     '@type': 'PostalAddress',
     addressRegion: 'CA',
@@ -72,10 +85,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <a className="skip-link" href="#main">
             Skip to content
           </a>
+          <div className="announce">
+            <p>Hand-finished in California · Est. 2024</p>
+          </div>
           <SiteHeader />
           <main id="main">{children}</main>
           <SiteFooter />
           <CartDrawer />
+          <EmailFlyout />
+          <Reveal />
         </CartProvider>
       </body>
     </html>

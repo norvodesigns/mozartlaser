@@ -245,12 +245,12 @@ export const products: Product[] = [
     "compareAtPrice": 25.99,
     "stripePriceId": "price_1TKKjC2c5eOyE1cRO43oSuLL",
     "checkoutName": "Golden Gate Bridge Plaque",
-    "wood": "pine",
-    "material": "Pine wood · Hand-finished · Wall-ready",
-    "description": "A detailed engraving of the Golden Gate Bridge rendered in natural pine wood. The cables, towers, and surrounding landscape are captured with sharp precision — the kind of piece that looks equally at home in an office or a living room. Each plaque is hand-finished in California.",
+    "wood": "poplar",
+    "material": "Poplar wood · Hand-finished · Wall-ready",
+    "description": "A detailed engraving of the Golden Gate Bridge rendered in natural poplar wood. The cables, towers, and surrounding landscape are captured with sharp precision — the kind of piece that looks equally at home in an office or a living room. Each plaque is hand-finished in California.",
     "bullets": [
       "Detailed cable and tower engraving — sharp and precise",
-      "Natural pine grain visible through the engraving",
+      "Natural poplar grain visible through the engraving",
       "Hand-finished in California — wall-ready"
     ],
     "images": [

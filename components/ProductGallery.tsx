@@ -2,49 +2,47 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { imageSize } from '@/lib/image-sizes';
 import { isVideo } from '@/lib/products';
 
 export function ProductGallery({
   images,
   name,
-  material,
+  wood,
 }: {
   images: string[];
   name: string;
-  material: string;
+  wood: string;
 }) {
   const [active, setActive] = useState(0);
   const current = images[active];
-  const woodName = material.split('·')[0]?.trim().toLowerCase() ?? 'wood';
 
-  if (!current) {
-    return <div className="product__stage" aria-hidden="true" />;
-  }
+  if (!current) return <div className="pdp__stage" aria-hidden="true" />;
 
   return (
-    <div className="product__gallery">
-      <div className="product__stage">
+    <div className="pdp__gallery">
+      <div className="pdp__stage">
         {isVideo(current) ? (
           <video src={current} controls playsInline preload="metadata" />
         ) : (
           <Image
             src={current}
-            alt={`${name}, engraved in ${woodName}`}
-            width={1200}
-            height={1200}
-            sizes="(max-width: 900px) 100vw, 580px"
+            alt={`${name}, engraved ${wood}`}
+            width={imageSize(current).w}
+            height={imageSize(current).h}
+            sizes="(max-width: 900px) 92vw, 560px"
             priority
           />
         )}
       </div>
 
       {images.length > 1 ? (
-        <div className="product__thumbs" role="group" aria-label={`${name} views`}>
+        <div className="pdp__thumbs" role="group" aria-label={`${name} views`}>
           {images.map((src, index) => (
             <button
               key={src}
               type="button"
-              className="product__thumb"
+              className="pdp__thumb"
               aria-current={index === active}
               aria-label={`View ${index + 1} of ${images.length}`}
               onClick={() => setActive(index)}
@@ -52,7 +50,13 @@ export function ProductGallery({
               {isVideo(src) ? (
                 <video src={src} muted playsInline preload="metadata" />
               ) : (
-                <Image src={src} alt="" width={144} height={144} />
+                <Image
+                  src={src}
+                  alt=""
+                  width={imageSize(src).w}
+                  height={imageSize(src).h}
+                  sizes="72px"
+                />
               )}
             </button>
           ))}
