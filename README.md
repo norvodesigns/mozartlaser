@@ -82,6 +82,13 @@ and needs no special configuration.
 holds `mozartlaser.vercel.app` for now. Merging to `main` therefore changes
 what `mozartlaser.vercel.app` serves, not the live site.
 
+`vercel.json` pins the framework to `nextjs`. The project predates this rebuild
+— it was created when the repository was a folder of static HTML — so its
+dashboard framework preset is "Other". Without the override Vercel runs
+`next build` and then serves the result as static files, with no routing, and
+every path returns a Vercel `NOT_FOUND`. Do not remove it unless the project's
+own preset has been changed to Next.js.
+
 To finish the move:
 
 1. Make the repository private in GitHub settings.
