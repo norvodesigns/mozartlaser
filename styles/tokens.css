@@ -1,0 +1,304 @@
+/* ============================================================
+   MOZART LASER — DESIGN TOKENS
+   Generated from the Mozart Laser design system, version 1.
+   Every value on the site resolves to one of these. No literals.
+   ============================================================ */
+
+:root {
+  /* ---- Colour: light ---- */
+  --surface: #faf7f2;
+  --surface-raised: #fffefb;
+  --surface-sunken: #f1eade;
+  --surface-inverse: #1e1913;
+
+  --ink: #231d16;
+  --ink-muted: #574c3e;
+  --ink-subtle: #6f6353;
+  --ink-inverse: #f8f4ed;
+
+  --line: #e5dccd;
+  --line-strong: #857761;
+
+  --ember: #7a4a22;
+  --ember-strong: #5c3616;
+  --ember-soft: #f2e6d7;
+  --on-ember: #fdfaf6;
+
+  --acacia: #a97648;
+  --poplar: #e9e1ce;
+  --pine: #dcc69c;
+
+  --success: #3d6b4d;
+  --danger: #9e3626;
+  --focus-ring: #3f2a14;
+
+  --shadow-raise: 0 1px 2px rgba(35, 29, 22, 0.06), 0 6px 16px rgba(35, 29, 22, 0.05);
+  --shadow-overlay: 0 12px 40px rgba(35, 29, 22, 0.14);
+
+  /* Product photography is shot on a bone ground, and `contain` leaves that
+     ground visible around the piece. The well therefore holds the light value
+     in both themes so the photograph is not framed by a dark rectangle. */
+  --product-well: #f1eade;
+
+  /* ---- Type ---- */
+  --font-display: var(--font-cormorant), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-work-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- Space: 4px base ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  /* ---- Radius ---- */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  /* ---- Layout ---- */
+  --page-max: 1200px;
+  --gutter: var(--space-6);
+  --measure: 640px;
+}
+
+/* Dark is a real theme, not an inversion: ember lightens here,
+   so every ember fill takes on-ember, never white. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: #16130f;
+    --surface-raised: #1f1b15;
+    --surface-sunken: #100d0a;
+    --surface-inverse: #f4efe6;
+
+    --ink: #f2ece2;
+    --ink-muted: #bdb1a0;
+    --ink-subtle: #9b8f7e;
+    --ink-inverse: #1e1913;
+
+    --line: #332c23;
+    --line-strong: #807260;
+
+    --ember: #d9a273;
+    --ember-strong: #ecc6a1;
+    --ember-soft: #2b2119;
+    --on-ember: #241a10;
+
+    --acacia: #c08f5f;
+    --poplar: #cfc4a8;
+    --pine: #e0c9a0;
+
+    --success: #86b294;
+    --danger: #e2907c;
+    --focus-ring: #e8c49a;
+
+    --shadow-raise: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4);
+    --shadow-overlay: 0 12px 40px rgba(0, 0, 0, 0.6);
+  }
+}
+
+:root[data-theme="dark"] {
+  --surface: #16130f;
+  --surface-raised: #1f1b15;
+  --surface-sunken: #100d0a;
+  --surface-inverse: #f4efe6;
+
+  --ink: #f2ece2;
+  --ink-muted: #bdb1a0;
+  --ink-subtle: #9b8f7e;
+  --ink-inverse: #1e1913;
+
+  --line: #332c23;
+  --line-strong: #807260;
+
+  --ember: #d9a273;
+  --ember-strong: #ecc6a1;
+  --ember-soft: #2b2119;
+  --on-ember: #241a10;
+
+  --acacia: #c08f5f;
+  --poplar: #cfc4a8;
+  --pine: #e0c9a0;
+
+  --success: #86b294;
+  --danger: #e2907c;
+  --focus-ring: #e8c49a;
+
+  --shadow-raise: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-overlay: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   RESET
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 26px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-none);
+}
+
+a {
+  color: var(--ember);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--ember-strong);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* ============================================================
+   TYPE SCALE
+   The display group is Cormorant Garamond; everything else is
+   Work Sans. Italics carry emphasis in headings — one word only.
+   ============================================================ */
+
+.display-xl,
+.display-l,
+.display-m,
+.display-s {
+  font-family: var(--font-display);
+  color: var(--ink);
+}
+
+.display-xl {
+  font-size: 64px;
+  line-height: 62px;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+.display-l {
+  font-size: 44px;
+  line-height: 48px;
+  font-weight: 300;
+  letter-spacing: -0.005em;
+}
+
+.display-m {
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 400;
+}
+
+.display-s {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 400;
+}
+
+.body-lead {
+  font-size: 18px;
+  line-height: 30px;
+  font-weight: 400;
+}
+
+.body {
+  font-size: 16px;
+  line-height: 26px;
+  font-weight: 400;
+}
+
+.body-sm {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.caption {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 400;
+}
+
+.eyebrow {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.label {
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+/* Phones: the display sizes step down, the space does not. */
+@media (max-width: 720px) {
+  .display-xl {
+    font-size: 44px;
+    line-height: 46px;
+  }
+
+  .display-l {
+    font-size: 34px;
+    line-height: 38px;
+  }
+
+  .display-m {
+    font-size: 27px;
+    line-height: 33px;
+  }
+}
+
+/* ============================================================
+   MOTION
+   Opacity and 4–8px translation only, 160–240ms, ease-out.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

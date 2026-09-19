@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-
-# Block irrelevant directories from crawl budget
-Disallow: /css/
-Disallow: /js/
-
-Sitemap: https://mozartlaser.com/sitemap.xml
