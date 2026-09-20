@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCart } from '@/components/CartProvider';
 import { imageSize } from '@/lib/image-sizes';
 import { formatPrice, type Product } from '@/lib/products';
@@ -9,8 +9,10 @@ import {
   BULK_THRESHOLD,
   FONTS,
   FONT_SIZES,
+  FONT_STACKS,
   ORDER_ENDPOINT,
   PERSONALIZE_FALLBACK,
+  PLACEMENTS,
   blankForms,
   personalizePrices,
   unitPrice,
@@ -20,7 +22,7 @@ type Mode = 'personalize' | 'scratch';
 
 type Errors = Partial<Record<string, string>>;
 
-const STEPS = ['What we are making', 'The engraving', 'Your details'];
+const STEPS = ['The piece', 'The engraving', 'Your details'];
 
 export function CreateFlow({
   products,
@@ -35,9 +37,11 @@ export function CreateFlow({
   const { add } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
 
   const [step, setStep] = useState(0);
-  const [mode, setMode] = useState<Mode>(initialSlug ? 'personalize' : 'personalize');
+  const [reached, setReached] = useState(0);
+  const [mode, setMode] = useState<Mode>('personalize');
   const [slug, setSlug] = useState(initialSlug ?? products[0]?.slug ?? '');
   const [blankId, setBlankId] = useState(blankForms[0]?.id ?? '');
 
@@ -74,6 +78,25 @@ export function CreateFlow({
     () => (mode === 'personalize' ? (product?.name ?? '') : (blank?.name ?? '')),
     [mode, product, blank],
   );
+  const pieceImage =
+    mode === 'personalize' ? (product?.images[0] ?? '') : (blank?.image ?? '');
+
+  /**
+   * One short word, shown in each face. The whole string truncates to the
+   * same "For Elean…" in all eight tiles, which compares nothing — the point
+   * of the samples is to tell the faces apart.
+   */
+  const sample = useMemo(() => {
+    const first = text.trim().split(/\s+/)[0] ?? '';
+    return first.slice(0, 10) || 'Abc';
+  }, [text]);
+
+  // Moving between steps replaces the whole panel. Without this you land
+  // halfway down the next step on a phone, looking at a field with no heading.
+  useEffect(() => {
+    if (step === 0) return;
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [step]);
 
   function validateStep(index: number): boolean {
     const next: Errors = {};
@@ -115,9 +138,17 @@ export function CreateFlow({
     return Object.keys(next).length === 0;
   }
 
+  function goTo(index: number) {
+    setErrors({});
+    setStep(index);
+  }
+
   function goNext() {
     if (!validateStep(step)) return;
-    setStep((current) => Math.min(current + 1, STEPS.length - 1));
+    const next = Math.min(step + 1, STEPS.length - 1);
+    setReached((r) => Math.max(r, next));
+    setStep(next);
+    setErrors({});
   }
 
   function goBack() {
@@ -154,17 +185,15 @@ export function CreateFlow({
 
   if (submitted) {
     return (
-      <div className="stack" style={{ gap: 'var(--space-5)' }}>
-        <div className="head">
-          <p className="eyebrow">Order started</p>
-          <h2>
-            We have your <em>details</em>
-          </h2>
-          <p className="lede">
-            Your piece is in the cart and the brief is with us. We will email a proof
-            to {email} before anything is cut.
-          </p>
-        </div>
+      <div className="done">
+        <p className="eyebrow">Order started</p>
+        <h2>
+          We have your <em>details</em>
+        </h2>
+        <p className="lede">
+          Your piece is in the cart and the brief is with us. We will email a proof to{' '}
+          {email} before anything is cut.
+        </p>
         <div className="row">
           <a href="/products" className="btn btn--secondary">
             Keep browsing
@@ -174,406 +203,414 @@ export function CreateFlow({
     );
   }
 
+  const canRevisit = (index: number) => index <= reached;
+
   return (
     <>
-      <ol className="progress">
-        {STEPS.map((label, index) => (
-          <li
-            key={label}
-            aria-current={index === step ? 'step' : undefined}
-            data-done={index < step ? 'true' : undefined}
-          >
-            <span className="progress__n" aria-hidden="true">
-              {index + 1}
-            </span>
-            {label}
-          </li>
-        ))}
-      </ol>
-
-      {step === 0 ? (
-        <div className="stack" style={{ gap: 'var(--space-7)' }}>
-          <fieldset className="stack" style={{ border: 0, gap: 'var(--space-4)' }}>
-            <legend className="label" style={{ marginBottom: 'var(--space-3)' }}>
-              Where are we starting?
-            </legend>
-            <div className="options">
-              <button
-                type="button"
-                className="option"
-                aria-pressed={mode === 'personalize'}
-                onClick={() => setMode('personalize')}
+      <div className="build" ref={topRef}>
+        <div className="build__main">
+          <ol className="progress">
+            {STEPS.map((label, index) => (
+              <li
+                key={label}
+                aria-current={index === step ? 'step' : undefined}
+                data-done={index < step ? 'true' : undefined}
               >
-                <span className="option__name">Personalize a piece from the shop</span>
-                <span className="option__price">
-                  We take an existing design and add your name, date or photo.
-                </span>
-              </button>
-              <button
-                type="button"
-                className="option"
-                aria-pressed={mode === 'scratch'}
-                onClick={() => setMode('scratch')}
-              >
-                <span className="option__name">Design something new</span>
-                <span className="option__price">
-                  You describe it, we draw it and cut it on blank stock.
-                </span>
-              </button>
-            </div>
-          </fieldset>
-
-          {mode === 'personalize' ? (
-            <div className="ml-field" style={{ maxWidth: 420 }}>
-              <label className="ml-field__label" htmlFor="piece">
-                Which piece
-              </label>
-              <select
-                id="piece"
-                className="ml-field__input"
-                value={slug}
-                onChange={(event) => setSlug(event.target.value)}
-              >
-                {products.map((item) => (
-                  <option key={item.slug} value={item.slug}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              <p className="ml-field__hint">
-                Personalising is {formatPrice(base)} — it includes the proof and the
-                extra setup on the laser.
-              </p>
-            </div>
-          ) : (
-            <fieldset className="stack" style={{ border: 0, gap: 'var(--space-4)' }}>
-              <legend className="label" style={{ marginBottom: 'var(--space-3)' }}>
-                Blank stock
-              </legend>
-              <div className="options">
-                {blankForms.map((form) => (
-                  <button
-                    key={form.id}
-                    type="button"
-                    className="option"
-                    aria-pressed={blankId === form.id}
-                    onClick={() => setBlankId(form.id)}
-                  >
-                    <span className="option__media">
-                      <Image
-                        src={form.image}
-                        alt=""
-                        width={imageSize(form.image).w}
-                        height={imageSize(form.image).h}
-                        sizes="220px"
-                      />
-                    </span>
-                    <span className="option__name">{form.name}</span>
-                    <span className="option__price">{formatPrice(form.price)} each</span>
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          )}
-
-          <div className="form-actions form-actions--end">
-            <button type="button" className="btn" onClick={goNext}>
-              Next
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {step === 1 ? (
-        <div className="stack" style={{ gap: 'var(--space-6)' }}>
-          {mode === 'personalize' ? (
-            <>
-              <div className="form-grid">
-                <div
-                  className={
-                    errors.text ? 'ml-field ml-field--invalid span-2' : 'ml-field span-2'
-                  }
+                <button
+                  type="button"
+                  className="progress__go"
+                  onClick={() => canRevisit(index) && goTo(index)}
+                  disabled={!canRevisit(index)}
                 >
-                  <label className="ml-field__label" htmlFor="engraved-text">
-                    Engraved text
+                  <span className="progress__n" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ol>
+
+          {step === 0 ? (
+            <div className="panel">
+              <Field label="Where are we starting?">
+                <div className="picks picks--wide">
+                  <Pick
+                    pressed={mode === 'personalize'}
+                    onClick={() => setMode('personalize')}
+                    title="Personalize a piece from the shop"
+                    note="We take an existing design and add your name, date or photo."
+                  />
+                  <Pick
+                    pressed={mode === 'scratch'}
+                    onClick={() => setMode('scratch')}
+                    title="Design something new"
+                    note="You describe it, we draw it and cut it on blank stock."
+                  />
+                </div>
+              </Field>
+
+              {mode === 'personalize' ? (
+                <Field
+                  label="Which piece"
+                  hint={`Personalising is ${formatPrice(base)} — that covers the proof and the extra setup on the laser.`}
+                >
+                  <div className="picker" role="group" aria-label="Choose a piece">
+                    {products.map((item) => (
+                      <Tile
+                        key={item.slug}
+                        pressed={slug === item.slug}
+                        onClick={() => setSlug(item.slug)}
+                        image={item.images[0]}
+                        title={item.name}
+                        note={formatPrice(
+                          personalizePrices[item.slug] ?? PERSONALIZE_FALLBACK,
+                        )}
+                      />
+                    ))}
+                  </div>
+                </Field>
+              ) : (
+                <Field
+                  label="Blank stock"
+                  hint="Pick the shape and size. We cut your design into it."
+                >
+                  <div className="picker" role="group" aria-label="Choose blank stock">
+                    {blankForms.map((form) => (
+                      <Tile
+                        key={form.id}
+                        pressed={blankId === form.id}
+                        onClick={() => setBlankId(form.id)}
+                        image={form.image}
+                        title={form.name}
+                        note={`${formatPrice(form.price)} each`}
+                      />
+                    ))}
+                  </div>
+                </Field>
+              )}
+            </div>
+          ) : null}
+
+          {step === 1 ? (
+            <div className="panel">
+              {mode === 'personalize' ? (
+                <>
+                  <div
+                    className={
+                      errors.text ? 'ml-field ml-field--invalid' : 'ml-field'
+                    }
+                  >
+                    <label className="ml-field__label" htmlFor="engraved-text">
+                      Engraved text
+                    </label>
+                    <input
+                      id="engraved-text"
+                      className="ml-field__input"
+                      value={text}
+                      maxLength={60}
+                      onChange={(event) => setText(event.target.value)}
+                      aria-describedby="engraved-text-note"
+                      placeholder="A name, a date, a line of scripture"
+                    />
+                    <p
+                      className={errors.text ? 'ml-field__error' : 'ml-field__hint'}
+                      id="engraved-text-note"
+                    >
+                      {errors.text ??
+                        'Leave it empty if the piece only needs a design.'}
+                    </p>
+                  </div>
+
+                  <Field
+                    label={`Font${text.trim() ? '' : ' (once you add text)'}`}
+                    error={errors.font}
+                  >
+                    <div className="picks" role="group" aria-label="Font">
+                      {FONTS.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="pick pick--font"
+                          aria-pressed={font === item}
+                          onClick={() => setFont(item)}
+                        >
+                          <span
+                            className="pick__sample"
+                            style={{ fontFamily: FONT_STACKS[item] ?? item }}
+                          >
+                            {sample}
+                          </span>
+                          <span className="pick__note">{item}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+
+                  <Field label="Text size" error={errors.fontSize}>
+                    <div className="picks picks--row" role="group" aria-label="Text size">
+                      {FONT_SIZES.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="pill"
+                          aria-pressed={fontSize === item}
+                          onClick={() => setFontSize(item)}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+
+                  <Field
+                    label="Where the text sits"
+                    hint="Pick the closest one. Anything unusual goes in the notes below."
+                    error={errors.placement}
+                  >
+                    <div className="picks picks--row" role="group" aria-label="Placement">
+                      {PLACEMENTS.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          className="pill"
+                          aria-pressed={placement === item}
+                          onClick={() => setPlacement(item)}
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+
+                  <UploadField
+                    fileRef={fileRef}
+                    fileName={fileName}
+                    onFile={setFileName}
+                    filePlacement={filePlacement}
+                    setFilePlacement={setFilePlacement}
+                    error={errors.filePlacement}
+                  />
+
+                  <div className="ml-field">
+                    <label className="ml-field__label" htmlFor="notes">
+                      Anything else
+                    </label>
+                    <textarea
+                      id="notes"
+                      className="ml-field__input"
+                      rows={3}
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                    />
+                    <p className="ml-field__hint">
+                      Gift deadlines, a second side, a change to the original design.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className={errors.changes ? 'ml-field ml-field--invalid' : 'ml-field'}
+                  >
+                    <label className="ml-field__label" htmlFor="changes">
+                      What you want made
+                    </label>
+                    <textarea
+                      id="changes"
+                      className="ml-field__input"
+                      rows={6}
+                      value={changes}
+                      onChange={(event) => setChanges(event.target.value)}
+                      placeholder="The design, the words, the feel of it."
+                    />
+                    <p className={errors.changes ? 'ml-field__error' : 'ml-field__hint'}>
+                      {errors.changes ??
+                        'The more you give us, the closer the first proof lands.'}
+                    </p>
+                  </div>
+
+                  <UploadField
+                    fileRef={fileRef}
+                    fileName={fileName}
+                    onFile={setFileName}
+                    filePlacement={filePlacement}
+                    setFilePlacement={setFilePlacement}
+                    error={errors.filePlacement}
+                  />
+                </>
+              )}
+
+              <div className="callout">
+                <p className="callout__title">Graphic design work</p>
+                <p className="callout__body">
+                  Photographs should be simple, with a clear subject against a plain
+                  background. If a design needs drawing from scratch there is an
+                  additional fee — email{' '}
+                  <a href="mailto:mozartlaser@gmail.com">mozartlaser@gmail.com</a> and
+                  we will quote it.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {step === 2 ? (
+            <div className="panel">
+              <Field
+                label="How many"
+                hint={
+                  mode === 'scratch'
+                    ? `${BULK_THRESHOLD} or more of one design takes 10% off.`
+                    : undefined
+                }
+              >
+                <span className="qty qty--lg">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    aria-label="One fewer"
+                  >
+                    −
+                  </button>
+                  <span aria-live="polite">{quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    aria-label="One more"
+                  >
+                    +
+                  </button>
+                </span>
+              </Field>
+
+              <div className="form-grid">
+                <div className={errors.name ? 'ml-field ml-field--invalid' : 'ml-field'}>
+                  <label className="ml-field__label" htmlFor="your-name">
+                    Your name
                   </label>
                   <input
-                    id="engraved-text"
+                    id="your-name"
                     className="ml-field__input"
-                    value={text}
-                    onChange={(event) => setText(event.target.value)}
-                    aria-describedby={errors.text ? 'engraved-text-error' : undefined}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    autoComplete="name"
                   />
-                  {errors.text ? (
-                    <p className="ml-field__error" id="engraved-text-error">
-                      {errors.text}
-                    </p>
-                  ) : (
-                    <p className="ml-field__hint">
-                      A name, a date, a line of scripture. Leave it empty if the piece
-                      only needs a design.
-                    </p>
-                  )}
+                  {errors.name ? <p className="ml-field__error">{errors.name}</p> : null}
                 </div>
 
-                <div className={errors.font ? 'ml-field ml-field--invalid' : 'ml-field'}>
-                  <label className="ml-field__label" htmlFor="font">
-                    Font {text.trim() ? '(required)' : ''}
+                <div className={errors.email ? 'ml-field ml-field--invalid' : 'ml-field'}>
+                  <label className="ml-field__label" htmlFor="your-email">
+                    Email
                   </label>
-                  <select
-                    id="font"
+                  <input
+                    id="your-email"
                     className="ml-field__input"
-                    value={font}
-                    onChange={(event) => setFont(event.target.value)}
-                  >
-                    <option value="">Select a font</option>
-                    {FONTS.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.font ? <p className="ml-field__error">{errors.font}</p> : null}
-                </div>
-
-                <div
-                  className={errors.fontSize ? 'ml-field ml-field--invalid' : 'ml-field'}
-                >
-                  <label className="ml-field__label" htmlFor="font-size">
-                    Text size {text.trim() ? '(required)' : ''}
-                  </label>
-                  <select
-                    id="font-size"
-                    className="ml-field__input"
-                    value={fontSize}
-                    onChange={(event) => setFontSize(event.target.value)}
-                  >
-                    <option value="">Select a size</option>
-                    {FONT_SIZES.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.fontSize ? (
-                    <p className="ml-field__error">{errors.fontSize}</p>
-                  ) : null}
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                  />
+                  <p className={errors.email ? 'ml-field__error' : 'ml-field__hint'}>
+                    {errors.email ?? 'This is where the proof goes.'}
+                  </p>
                 </div>
 
                 <div
                   className={
-                    errors.placement
+                    errors.emailConfirm
                       ? 'ml-field ml-field--invalid span-2'
                       : 'ml-field span-2'
                   }
                 >
-                  <label className="ml-field__label" htmlFor="placement">
-                    Text placement {text.trim() ? '(required)' : ''}
+                  <label className="ml-field__label" htmlFor="your-email-confirm">
+                    Confirm email
                   </label>
                   <input
-                    id="placement"
+                    id="your-email-confirm"
                     className="ml-field__input"
-                    value={placement}
-                    onChange={(event) => setPlacement(event.target.value)}
+                    type="email"
+                    value={emailConfirm}
+                    onChange={(event) => setEmailConfirm(event.target.value)}
+                    autoComplete="email"
                   />
-                  {errors.placement ? (
-                    <p className="ml-field__error">{errors.placement}</p>
-                  ) : (
-                    <p className="ml-field__hint">
-                      Where on the piece, and which side — &ldquo;centred under the
-                      engraving, front&rdquo;.
-                    </p>
-                  )}
+                  {errors.emailConfirm ? (
+                    <p className="ml-field__error">{errors.emailConfirm}</p>
+                  ) : null}
                 </div>
               </div>
-
-              <UploadField
-                fileRef={fileRef}
-                fileName={fileName}
-                onFile={setFileName}
-                filePlacement={filePlacement}
-                setFilePlacement={setFilePlacement}
-                error={errors.filePlacement}
-              />
-
-              <div className="ml-field">
-                <label className="ml-field__label" htmlFor="notes">
-                  Anything else
-                </label>
-                <textarea
-                  id="notes"
-                  className="ml-field__input"
-                  rows={3}
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                />
-                <p className="ml-field__hint">
-                  Gift deadlines, a second side, a change to the original design.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <div
-                className={errors.changes ? 'ml-field ml-field--invalid' : 'ml-field'}
-              >
-                <label className="ml-field__label" htmlFor="changes">
-                  What you want made (required)
-                </label>
-                <textarea
-                  id="changes"
-                  className="ml-field__input"
-                  rows={5}
-                  value={changes}
-                  onChange={(event) => setChanges(event.target.value)}
-                />
-                {errors.changes ? (
-                  <p className="ml-field__error">{errors.changes}</p>
-                ) : (
-                  <p className="ml-field__hint">
-                    Describe the design, the words and the feel. The more you give us,
-                    the closer the first proof lands.
-                  </p>
-                )}
-              </div>
-
-              <UploadField
-                fileRef={fileRef}
-                fileName={fileName}
-                onFile={setFileName}
-                filePlacement={filePlacement}
-                setFilePlacement={setFilePlacement}
-                error={errors.filePlacement}
-              />
-            </>
-          )}
-
-          <div className="callout">
-            <p className="callout__title">Graphic design work</p>
-            <p className="callout__body">
-              Photographs should be simple, with a clear subject against a plain
-              background. If a design needs drawing from scratch there is an additional
-              fee — email{' '}
-              <a href="mailto:mozartlaser@gmail.com">mozartlaser@gmail.com</a> and we
-              will quote it.
-            </p>
-          </div>
+            </div>
+          ) : null}
 
           <div className="form-actions">
-            <button type="button" className="btn btn--secondary" onClick={goBack}>
-              Back
-            </button>
-            <button type="button" className="btn" onClick={goNext}>
-              Next
-            </button>
+            {step > 0 ? (
+              <button type="button" className="btn btn--secondary" onClick={goBack}>
+                Back
+              </button>
+            ) : null}
+            {step < 2 ? (
+              <button type="button" className="btn" onClick={goNext}>
+                Next
+              </button>
+            ) : (
+              <button type="button" className="btn btn--lg" onClick={handleSubmit}>
+                Add to cart · {formatPrice(total)}
+              </button>
+            )}
           </div>
         </div>
-      ) : null}
 
-      {step === 2 ? (
-        <div className="stack" style={{ gap: 'var(--space-6)' }}>
-          <div className="form-grid">
-            <div className="ml-field">
-              <label className="ml-field__label" htmlFor="quantity">
-                How many (required)
-              </label>
-              <input
-                id="quantity"
-                className="ml-field__input"
-                type="number"
-                min={1}
-                value={quantity}
-                onChange={(event) =>
-                  setQuantity(Math.max(1, Number(event.target.value) || 1))
-                }
-              />
-              {mode === 'scratch' ? (
-                <p className="ml-field__hint">
-                  {BULK_THRESHOLD} or more of one design takes 10% off.
-                </p>
+        {/* The piece, the running spec and the price, visible the whole way
+            through. Filling in a brief for something you cannot see was the
+            main reason this flow felt like paperwork. */}
+        <aside className="build__aside" aria-label="Your piece so far">
+          <div className="build__head">
+            <span className="build__stage">
+              {pieceImage ? (
+                <Image
+                  key={pieceImage}
+                  src={pieceImage}
+                  alt={pieceName}
+                  width={imageSize(pieceImage).w}
+                  height={imageSize(pieceImage).h}
+                  sizes="(max-width: 900px) 96px, 320px"
+                />
               ) : null}
-            </div>
-
-            <div className={errors.name ? 'ml-field ml-field--invalid' : 'ml-field'}>
-              <label className="ml-field__label" htmlFor="your-name">
-                Your name (required)
-              </label>
-              <input
-                id="your-name"
-                className="ml-field__input"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                autoComplete="name"
-              />
-              {errors.name ? <p className="ml-field__error">{errors.name}</p> : null}
-            </div>
-
-            <div className={errors.email ? 'ml-field ml-field--invalid' : 'ml-field'}>
-              <label className="ml-field__label" htmlFor="your-email">
-                Email (required)
-              </label>
-              <input
-                id="your-email"
-                className="ml-field__input"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-              />
-              {errors.email ? (
-                <p className="ml-field__error">{errors.email}</p>
-              ) : (
-                <p className="ml-field__hint">This is where the proof goes.</p>
-              )}
-            </div>
-
-            <div
-              className={errors.emailConfirm ? 'ml-field ml-field--invalid' : 'ml-field'}
-            >
-              <label className="ml-field__label" htmlFor="your-email-confirm">
-                Confirm email (required)
-              </label>
-              <input
-                id="your-email-confirm"
-                className="ml-field__input"
-                type="email"
-                value={emailConfirm}
-                onChange={(event) => setEmailConfirm(event.target.value)}
-                autoComplete="email"
-              />
-              {errors.emailConfirm ? (
-                <p className="ml-field__error">{errors.emailConfirm}</p>
-              ) : null}
+            </span>
+            <div className="build__id">
+              <p className="eyebrow">
+                {mode === 'personalize' ? 'Personalised' : 'Made to order'}
+              </p>
+              <p className="build__name">{pieceName || 'Pick a piece'}</p>
             </div>
           </div>
 
-          <dl className="summary">
-            <div className="summary__row">
-              <dt>{pieceName}</dt>
-              <dd>
-                {formatPrice(each)} each{bulkApplies ? ', bulk discount applied' : ''}
-              </dd>
-            </div>
-            <div className="summary__row">
-              <dt>Quantity</dt>
-              <dd>{quantity}</dd>
-            </div>
-            <div className="summary__row summary__row--total">
-              <dt>Total</dt>
-              <dd>{formatPrice(total)}</dd>
-            </div>
+          <dl className="spec-list">
+            {mode === 'personalize' ? (
+              <>
+                <SpecRow label="Text" value={text.trim()} />
+                <SpecRow label="Font" value={font} />
+                <SpecRow label="Size" value={fontSize} />
+                <SpecRow label="Placement" value={placement} />
+              </>
+            ) : (
+              <SpecRow label="Brief" value={changes.trim()} />
+            )}
+            <SpecRow label="Design file" value={fileName} />
+            <SpecRow label="Quantity" value={quantity > 1 ? String(quantity) : ''} />
           </dl>
 
-          <div className="form-actions">
-            <button type="button" className="btn btn--secondary" onClick={goBack}>
-              Back
-            </button>
-            <button type="button" className="btn btn--lg" onClick={handleSubmit}>
-              Add to cart
-            </button>
-          </div>
-        </div>
-      ) : null}
+          <p className="build__price">
+            <span>
+              {quantity > 1 ? `${formatPrice(each)} each` : 'Total'}
+              {bulkApplies ? ' · 10% off' : ''}
+            </span>
+            <strong className="tabular">{formatPrice(total)}</strong>
+          </p>
+          <p className="caption">
+            Nothing is cut until you approve a proof. Ships in 3–5 days.
+          </p>
+        </aside>
+      </div>
 
       {/* The order brief posts into a hidden frame so the file upload keeps
           working without a cross-origin request. Field names are unchanged. */}
@@ -614,6 +651,92 @@ export function CreateFlow({
   );
 }
 
+/** A labelled group. Fieldset/legend can't be laid out reliably, so this. */
+function Field({
+  label,
+  hint,
+  error,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="field" role="group" aria-label={label}>
+      <p className="field__label">{label}</p>
+      {children}
+      {error ? (
+        <p className="ml-field__error">{error}</p>
+      ) : hint ? (
+        <p className="ml-field__hint">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function Pick({
+  pressed,
+  onClick,
+  title,
+  note,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  title: string;
+  note: string;
+}) {
+  return (
+    <button type="button" className="pick" aria-pressed={pressed} onClick={onClick}>
+      <span className="pick__title">{title}</span>
+      <span className="pick__note">{note}</span>
+    </button>
+  );
+}
+
+function Tile({
+  pressed,
+  onClick,
+  image,
+  title,
+  note,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  image: string;
+  title: string;
+  note: string;
+}) {
+  return (
+    <button type="button" className="tile" aria-pressed={pressed} onClick={onClick}>
+      <span className="tile__media">
+        {image ? (
+          <Image
+            src={image}
+            alt=""
+            width={imageSize(image).w}
+            height={imageSize(image).h}
+            sizes="140px"
+          />
+        ) : null}
+      </span>
+      <span className="tile__name">{title}</span>
+      <span className="tile__note">{note}</span>
+    </button>
+  );
+}
+
+function SpecRow({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div className="spec-list__row">
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
 function UploadField({
   fileRef,
   fileName,
@@ -630,40 +753,48 @@ function UploadField({
   error?: string;
 }) {
   return (
-    <div className="form-grid">
-      <div className="ml-field">
-        <label className="ml-field__label" htmlFor="design-file">
-          Upload a design or photo
+    <>
+      <Field
+        label="Upload a design or photo"
+        hint="Optional. JPG or PNG, the simpler the better."
+      >
+        {/* The native file input is unstyleable, so it sits invisibly over a
+            drop zone we can style. The label still drives it, so the keyboard
+            and screen readers get the real control. */}
+        <label className="drop" data-filled={fileName || undefined}>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              onFile(file ? file.name : '');
+              // Mirror the chosen file into the form that actually posts.
+              if (fileRef.current) fileRef.current.files = event.target.files;
+            }}
+          />
+          <span className="drop__title">
+            {fileName ? fileName : 'Choose an image'}
+          </span>
+          <span className="drop__note">
+            {fileName ? 'Attached — tap to replace' : 'Or drag one in'}
+          </span>
         </label>
-        <input
-          id="design-file"
-          className="ml-field__input"
-          type="file"
-          accept="image/*"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            onFile(file ? file.name : '');
-            // Mirror the chosen file into the form that actually posts.
-            if (fileRef.current) fileRef.current.files = event.target.files;
-          }}
-        />
-        <p className="ml-field__hint">
-          {fileName ? `Attached: ${fileName}` : 'Optional. JPG or PNG works best.'}
-        </p>
-      </div>
+      </Field>
 
-      <div className={error ? 'ml-field ml-field--invalid' : 'ml-field'}>
-        <label className="ml-field__label" htmlFor="file-placement">
-          Where the design goes {fileName ? '(required)' : ''}
-        </label>
-        <input
-          id="file-placement"
-          className="ml-field__input"
-          value={filePlacement}
-          onChange={(event) => setFilePlacement(event.target.value)}
-        />
-        {error ? <p className="ml-field__error">{error}</p> : null}
-      </div>
-    </div>
+      {fileName ? (
+        <div className={error ? 'ml-field ml-field--invalid' : 'ml-field'}>
+          <label className="ml-field__label" htmlFor="file-placement">
+            Where the design goes
+          </label>
+          <input
+            id="file-placement"
+            className="ml-field__input"
+            value={filePlacement}
+            onChange={(event) => setFilePlacement(event.target.value)}
+          />
+          {error ? <p className="ml-field__error">{error}</p> : null}
+        </div>
+      ) : null}
+    </>
   );
 }

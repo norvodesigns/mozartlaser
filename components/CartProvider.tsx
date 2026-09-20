@@ -92,20 +92,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, hydrated]);
 
-  // The drawer is a modal surface: lock the page behind it and close on Escape.
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [isOpen]);
+  // The scroll lock, Escape and focus handling for the drawer live in
+  // useOverlay, which the drawer itself uses. This provider deliberately keeps
+  // no copy: two independent locks on body.style.overflow deadlock each other.
 
   const add = useCallback<CartContextValue['add']>((item) => {
     setItems((current) => {

@@ -100,6 +100,33 @@ export const FONTS = [
 
 export const FONT_SIZES = ['Small', 'Medium', 'Large'];
 
+/**
+ * The placements the studio actually cuts, offered as choices.
+ *
+ * The old flow asked for this as free prose, which put the layout decision on
+ * the customer and produced briefs the studio had to go back and query. The
+ * free-text note is still there for anything these don't cover.
+ */
+export const PLACEMENTS = [
+  'Centred on the front',
+  'Below the design',
+  'Above the design',
+  'Along the bottom edge',
+  'On the back',
+];
+
+/** Rough CSS stacks so a font can be previewed in its own face. */
+export const FONT_STACKS: Record<string, string> = {
+  Arial: 'Arial, Helvetica, sans-serif',
+  'Apple Chancery': '"Apple Chancery", "Snell Roundhand", cursive',
+  'Academy Engraved LET': '"Academy Engraved LET", "Cormorant Garamond", serif',
+  'American Typewriter': '"American Typewriter", "Courier New", serif',
+  'Apple Symbols': '"Apple Symbols", system-ui, sans-serif',
+  Charmonman: 'Charmonman, "Apple Chancery", cursive',
+  'Times New Roman': '"Times New Roman", Times, serif',
+  'Source Code Pro': '"Source Code Pro", ui-monospace, monospace',
+};
+
 /** Where the custom order is delivered. Unchanged from the old form. */
 export const ORDER_ENDPOINT =
   process.env.NEXT_PUBLIC_ORDER_ENDPOINT ??

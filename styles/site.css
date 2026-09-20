@@ -285,6 +285,14 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 }
 .menu[data-closing] { animation: menu-out 300ms var(--ease-in-soft) forwards; }
 
+/* `.wrap` carries `margin-inline: auto`, and inside a flex column an auto
+   cross-axis margin beats `stretch` — so every child shrank to its own content
+   and centred itself. That is why the close button appeared to shove the
+   wordmark off centre (the two were butted together in a 224px box) and why
+   the links read as left-justified inside a narrow column. Give them the
+   width back and lay them out deliberately. */
+.menu > * { width: 100%; }
+
 @keyframes menu-in {
   from { opacity: 0; transform: scale(1.035); }
   to   { opacity: 1; transform: scale(1); }
@@ -294,13 +302,20 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
   to   { opacity: 0; transform: scale(1.02); }
 }
 
-/* The announcement bar reads through the blur as a band across the top, so
-   the wordmark and the close start below it rather than on it. */
+/* Three columns, with the wordmark in the middle one: it is then centred on
+   the viewport rather than on whatever space the close button leaves it.
+   The announcement bar reads through the blur as a band across the top, so
+   both start below it rather than on it. */
 .menu__top {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-block: calc(var(--space-7) + env(safe-area-inset-top, 0px)) var(--space-4);
+  display: grid; grid-template-columns: 44px 1fr 44px; align-items: center;
+  padding-block: calc(var(--space-7) + env(safe-area-inset-top, 0px)) var(--space-5);
   flex: none;
 }
+.menu__top .mark {
+  grid-column: 2; justify-self: center;
+  background-position: center center;
+}
+.menu__close { grid-column: 3; justify-self: end; }
 
 .menu__close {
   width: 44px; height: 44px; padding: 0; position: relative;
@@ -319,7 +334,7 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 
 .menu__nav {
   flex: 1; display: flex; flex-direction: column; justify-content: center;
-  padding-block: var(--space-6); gap: 0;
+  padding-block: var(--space-6); gap: 0; text-align: center;
 }
 
 .menu__link {
@@ -341,22 +356,33 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 .menu__word {
   display: block; font-family: var(--font-display); font-weight: 300;
   font-size: clamp(38px, 11vw, 60px); line-height: 1.08; letter-spacing: -.015em;
-  transition: transform 460ms var(--ease-spring), color 240ms ease-out;
+  transition: transform var(--dur-slow) var(--ease-spring), color var(--dur-fast) ease-out;
 }
+/* The word lifts rather than slides. On a centred stack a sideways slide
+   breaks the axis the whole menu is built on. */
 .menu__link:hover .menu__word,
-.menu__link:focus-visible .menu__word { transform: translateX(12px); color: var(--ember); }
-.menu__link:active .menu__word { transform: translateX(12px) scale(.98); transition-duration: 120ms; }
+.menu__link:focus-visible .menu__word { transform: translateY(-3px); color: var(--ember); }
+.menu__link:active .menu__word { transform: translateY(0) scale(.97); transition-duration: var(--dur-press); }
 .menu__link[aria-current="page"] .menu__word { color: var(--ember); }
 
+/* The hairline is always there; an ember segment opens across it from the
+   middle out, so the emphasis grows on the same axis as the type. */
 .menu__rule {
-  display: block; height: 1px; background: var(--line); margin-top: var(--space-3);
-  transform: scaleX(1); transform-origin: left;
-  transition: background-color 300ms ease-out;
+  display: block; position: relative; height: 1px; background: var(--line);
+  margin-top: var(--space-4);
 }
-.menu__link:hover .menu__rule { background: var(--line-strong); }
+.menu__rule::after {
+  content: ""; position: absolute; inset: 0; background: var(--ember);
+  transform: scaleX(0);
+  transition: transform var(--dur-slow) var(--ease-out-soft);
+}
+.menu__link:hover .menu__rule::after,
+.menu__link:focus-visible .menu__rule::after,
+.menu__link[aria-current="page"] .menu__rule::after { transform: scaleX(1); }
 
 .menu__foot {
   flex: none; display: flex; flex-direction: column; gap: var(--space-4);
+  align-items: center; text-align: center;
   padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom, 0px));
   opacity: 0; transform: translateY(20px);
   animation: menu-link-in 640ms var(--ease-spring) forwards;
@@ -903,13 +929,213 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
    CREATE FLOW
    ============================================================ */
 
-.progress { list-style: none; margin: 0 0 var(--space-7); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-5); border-block: 1px solid var(--line); padding-block: var(--space-4); }
-.progress li { display: flex; align-items: center; gap: var(--space-2); font-size: 13px; line-height: 16px; font-weight: 500; letter-spacing: .06em; color: var(--ink-subtle); }
-.progress li[aria-current="step"] { color: var(--ember); }
-.progress li[data-done="true"] { color: var(--ink); }
+/* ---- Progress ----
+   A step you have already completed is a way back, so it is a real button. */
+
+.progress {
+  list-style: none; margin: 0 0 var(--space-7); padding: 0;
+  display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5);
+  border-block: 1px solid var(--line); padding-block: var(--space-3);
+}
+.progress li { display: flex; align-items: center; }
+.progress__go {
+  display: flex; align-items: center; gap: var(--space-2);
+  background: none; border: 0; padding: var(--space-1) 0; font: inherit;
+  font-size: 13px; line-height: 20px; font-weight: 500; letter-spacing: .06em;
+  color: var(--ink-subtle); cursor: pointer; text-align: left;
+  transition: color var(--dur-fast) ease-out, transform var(--dur-slow) var(--ease-spring);
+}
+.progress__go:disabled { cursor: default; }
+.progress__go:not(:disabled):hover { color: var(--ink); }
+.progress__go:not(:disabled):active { transform: scale(.96); transition-duration: var(--dur-press); }
+.progress li[aria-current="step"] .progress__go { color: var(--ember); }
+.progress li[data-done="true"] .progress__go { color: var(--ink); }
 .progress__n {
-  width: 22px; height: 22px; border-radius: var(--radius-pill); border: 1px solid currentColor;
+  width: 24px; height: 24px; border-radius: var(--radius-pill); border: 1px solid currentColor;
   display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex: none;
+  transition: background-color var(--dur-fast) ease-out, color var(--dur-fast) ease-out;
+}
+.progress li[data-done="true"] .progress__n { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* ============================================================
+   CREATE FLOW
+   Two columns: the questions on the left, and on the right the
+   piece itself with the brief building up under it and the price
+   at the foot. Answering questions about an object you cannot see
+   was what made the old flow feel like paperwork.
+   ============================================================ */
+
+.build {
+  display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--space-8); align-items: start; margin-top: var(--space-7);
+}
+.build__main { min-width: 0; }
+
+.panel { display: flex; flex-direction: column; gap: var(--space-7); }
+.panel > .callout { margin-top: calc(var(--space-2) * -1); }
+
+.field { display: flex; flex-direction: column; gap: var(--space-3); }
+.field__label {
+  margin: 0; font-size: 13px; line-height: 20px; font-weight: 500;
+  letter-spacing: .06em; color: var(--ink);
+}
+
+/* ---- Choice groups ---- */
+
+.picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); }
+.picks--wide { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.picks--row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.pick {
+  display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start;
+  padding: var(--space-4); text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface-raised); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out,
+              transform var(--dur-slow) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.pick:hover { transform: translateY(calc(var(--lift-sm) * -1)); box-shadow: var(--shadow-raise); }
+.pick:active { transform: translateY(0) scale(.98); transition-duration: var(--dur-press); }
+.pick[aria-pressed="true"] { border-color: var(--ember); background: var(--ember-soft); }
+.pick[aria-pressed="true"]:not(:active) { transform: none; box-shadow: none; }
+.pick__title { font-size: 15px; line-height: 22px; color: var(--ink); }
+.pick__note { font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+
+/* A font you cannot see is a font you cannot choose. */
+.pick--font { align-items: center; text-align: center; gap: var(--space-1); padding: var(--space-3); }
+.pick__sample {
+  font-size: 26px; line-height: 34px; color: var(--ink);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pick--font .pick__note { font-size: 11px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-subtle); }
+
+.pill {
+  font: inherit; font-size: 14px; line-height: 20px; cursor: pointer;
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong); background: transparent; color: var(--ink);
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out,
+              color var(--dur-fast) ease-out, transform var(--dur-slow) var(--ease-spring);
+}
+.pill:hover { border-color: var(--ink); }
+.pill:active { transform: scale(.93); transition-duration: var(--dur-press); }
+.pill[aria-pressed="true"] { background: var(--ember); border-color: var(--ember); color: var(--on-ember); }
+
+/* ---- Piece picker ---- */
+
+.picker {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  gap: var(--space-3); max-height: 430px; overflow-y: auto;
+  padding: var(--space-1); margin: calc(var(--space-1) * -1);
+}
+.tile {
+  display: flex; flex-direction: column; gap: var(--space-1);
+  padding: 0 0 var(--space-3); text-align: center; font: inherit; color: inherit;
+  background: var(--surface-raised); border: 1px solid var(--line);
+  border-radius: var(--radius-md); overflow: hidden; cursor: pointer;
+  transition: border-color var(--dur-fast) ease-out,
+              transform var(--dur-slow) var(--ease-spring), box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.tile:hover { transform: translateY(calc(var(--lift-sm) * -1)); box-shadow: var(--shadow-raise); }
+.tile:active { transform: translateY(0) scale(.97); transition-duration: var(--dur-press); }
+.tile[aria-pressed="true"] { border-color: var(--ember); box-shadow: inset 0 0 0 1px var(--ember); }
+.tile[aria-pressed="true"]:not(:active) { transform: none; }
+.tile__media {
+  display: block; position: relative; aspect-ratio: 1 / 1;
+  background: var(--surface-sunken); border-bottom: 1px solid var(--line);
+  margin-bottom: var(--space-2);
+}
+.tile__media img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  padding: var(--space-3); object-fit: contain;
+}
+.tile__name {
+  font-size: 12px; line-height: 17px; color: var(--ink);
+  padding-inline: var(--space-2); text-wrap: balance;
+}
+.tile__note { font-size: 12px; line-height: 17px; color: var(--ink-subtle); font-variant-numeric: tabular-nums; }
+
+/* ---- Upload ----
+   The native file input cannot be styled, so it sits invisible over a zone
+   that can be. The label still drives it, so the control stays real. */
+
+.drop {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-1); padding: var(--space-6) var(--space-5); text-align: center;
+  background: var(--surface-sunken); border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md); cursor: pointer;
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out;
+}
+.drop:hover { border-color: var(--ink); }
+.drop:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.drop[data-filled] { border-style: solid; border-color: var(--ember); background: var(--ember-soft); }
+.drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.drop__title { font-size: 15px; line-height: 22px; color: var(--ink); word-break: break-all; }
+.drop__note { font-size: 13px; line-height: 20px; color: var(--ink-subtle); }
+
+/* ---- The running brief ---- */
+
+.build__aside {
+  position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--space-8));
+  display: flex; flex-direction: column; gap: var(--space-4);
+  padding: var(--space-5); background: var(--surface-raised);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+}
+.build__head { display: flex; flex-direction: column; gap: var(--space-4); }
+.build__stage {
+  display: block; position: relative; aspect-ratio: 1 / 1;
+  background: var(--surface-sunken); border: 1px solid var(--line);
+}
+.build__stage img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  padding: var(--space-5); object-fit: contain;
+}
+.build__id { display: flex; flex-direction: column; gap: var(--space-1); }
+.build__name {
+  margin: 0; font-family: var(--font-display); font-size: 22px; line-height: 28px;
+  font-weight: 400; color: var(--ink); text-wrap: balance;
+}
+
+.spec-list { margin: 0; display: flex; flex-direction: column; }
+.spec-list:empty { display: none; }
+.spec-list__row {
+  display: grid; grid-template-columns: 74px 1fr; gap: var(--space-3);
+  padding-block: var(--space-2); border-top: 1px solid var(--line);
+  font-size: 13px; line-height: 20px;
+}
+.spec-list__row dt { color: var(--ink-subtle); }
+.spec-list__row dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+
+.build__price {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: var(--space-3); margin: 0; padding-top: var(--space-4);
+  border-top: 1px solid var(--line-strong);
+  font-size: 13px; line-height: 20px; color: var(--ink-muted);
+}
+.build__price strong { font-family: var(--font-display); font-size: 26px; line-height: 30px; font-weight: 400; color: var(--ink); }
+
+.qty--lg { align-self: flex-start; }
+.qty--lg button { padding: var(--space-2) var(--space-5); font-size: 18px; }
+.qty--lg > span { min-width: 48px; font-size: 16px; }
+
+.done { display: flex; flex-direction: column; gap: var(--space-5); align-items: flex-start; margin-top: var(--space-7); }
+.done h2 { font-family: var(--font-display); font-weight: 300; font-size: 44px; line-height: 48px; margin: 0; text-wrap: balance; }
+.done h2 em { font-style: italic; }
+
+@media (max-width: 900px) {
+  .build { grid-template-columns: 1fr; gap: var(--space-6); }
+  /* The piece leads on a phone: you see what you are briefing before the
+     questions, not after them. It shrinks to a row so it costs little height. */
+  .build__aside { position: static; order: -1; }
+  .build__head { flex-direction: row; align-items: center; gap: var(--space-4); }
+  .build__stage { width: 88px; flex: none; }
+  .build__stage img { padding: var(--space-2); }
+  .build__name { font-size: 19px; line-height: 25px; }
+  .panel { gap: var(--space-6); }
+  .picker { max-height: 340px; }
+}
+@media (max-width: 560px) {
+  .picker { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  .form-actions .btn { flex: 1 1 auto; }
 }
 
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-6); }

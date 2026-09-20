@@ -5,6 +5,32 @@ import { useEffect, useRef, useState } from 'react';
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea';
 
 /**
+ * Page scroll lock, reference counted.
+ *
+ * Counted rather than a plain set/restore because two overlays that each
+ * capture and restore `body.style.overflow` independently will deadlock the
+ * page: the second to lock captures the first one's "hidden" as the value to
+ * go back to, and restores the page to locked when it closes. That is exactly
+ * what happened when the cart drawer's provider and this hook each kept their
+ * own lock. Only the outermost overlay touches the style now.
+ */
+let lockCount = 0;
+let overflowBeforeLock = '';
+
+function lockScroll() {
+  if (lockCount === 0) {
+    overflowBeforeLock = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  lockCount += 1;
+}
+
+function unlockScroll() {
+  lockCount = Math.max(0, lockCount - 1);
+  if (lockCount === 0) document.body.style.overflow = overflowBeforeLock;
+}
+
+/**
  * Shared behaviour for the full-screen menu and the cart drawer.
  *
  * React unmounts instantly, which is why an overlay can animate in and then
@@ -46,8 +72,7 @@ export function useOverlay({
     if (!isOpen) return;
 
     const opener = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    lockScroll();
 
     // Wait a frame so the panel is in the DOM before focus moves.
     const frame = window.requestAnimationFrame(() => {
@@ -79,7 +104,7 @@ export function useOverlay({
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
       opener?.focus();
     };
   }, [isOpen, onClose]);

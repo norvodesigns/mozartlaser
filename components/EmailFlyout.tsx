@@ -1,10 +1,19 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 import { MESSAGES, isValidEmail, subscribe } from '@/lib/email';
 
 const DISMISS_KEY = 'mozartlaser_flyout_dismissed';
 const DELAY_MS = 4500;
+
+/**
+ * Pages where a timed overlay is an interruption rather than an offer. The
+ * create flow keeps the piece, the running brief and the price in a panel the
+ * flyout lands directly on top of, and the order pages are the worst possible
+ * moment to ask for an email address.
+ */
+const QUIET_PATHS = ['/create', '/order'];
 
 type State = 'idle' | 'sending' | 'ok' | 'error';
 
@@ -19,12 +28,17 @@ type State = 'idle' | 'sending' | 'ok' | 'error';
  */
 export function EmailFlyout() {
   const id = useId();
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [state, setState] = useState<State>('idle');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (QUIET_PATHS.some((path) => pathname.startsWith(path))) {
+      setVisible(false);
+      return;
+    }
     let dismissed = false;
     try {
       dismissed = window.sessionStorage.getItem(DISMISS_KEY) === '1';
@@ -34,7 +48,7 @@ export function EmailFlyout() {
     if (dismissed) return;
     const timer = window.setTimeout(() => setVisible(true), DELAY_MS);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!visible) return;
