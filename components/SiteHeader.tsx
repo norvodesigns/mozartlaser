@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useCart } from './CartProvider';
+import { MobileMenu } from './MobileMenu';
 
 const NAV = [
   { href: '/', label: 'Home' },
@@ -21,10 +22,30 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { count, open } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  // Close on navigation.
+  // The masthead is frosted from the start; the hairline and shadow only
+  // arrive once there is page underneath it to separate from. rAF-throttled
+  // and passive, so it costs nothing on the scroll thread.
+  useEffect(() => {
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      setScrolled(window.scrollY > 8);
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(read);
+    };
+    read();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
@@ -38,50 +59,9 @@ export function SiteHeader() {
     return () => mq.removeEventListener('change', onChange);
   }, [menuOpen]);
 
-  // Modal behaviour: lock the page, trap focus, Escape closes, focus returns.
-  useEffect(() => {
-    if (!menuOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    const toggle = toggleRef.current;
-    document.body.style.overflow = 'hidden';
-    const firstLink = menuRef.current?.querySelector<HTMLElement>('a, button');
-    firstLink?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setMenuOpen(false);
-        return;
-      }
-      if (event.key !== 'Tab') return;
-
-      const focusable = menuRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input, select, textarea',
-      );
-      if (!focusable || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      toggle?.focus();
-    };
-  }, [menuOpen]);
-
   return (
     <>
-      <header className="masthead">
+      <header className="masthead" data-scrolled={scrolled || undefined}>
         <div className="wrap masthead__in">
           <Link href="/" className="mark" aria-label="Mozart Laser — home" />
 
@@ -100,7 +80,13 @@ export function SiteHeader() {
           <div className="masthead__end">
             <button type="button" className="cart" onClick={open}>
               <span>Cart</span>{' '}
-              <b aria-live="polite" aria-label={`${count} items in cart`}>
+              {/* Keyed on the count so React remounts it and the pop replays. */}
+              <b
+                key={count}
+                data-bump={count > 0 ? '' : undefined}
+                aria-live="polite"
+                aria-label={`${count} items in cart`}
+              >
                 {count}
               </b>
             </button>
@@ -108,7 +94,6 @@ export function SiteHeader() {
               Create Your Gift
             </Link>
             <button
-              ref={toggleRef}
               type="button"
               className="menu-toggle"
               aria-expanded={menuOpen}
@@ -117,58 +102,17 @@ export function SiteHeader() {
             >
               <span />
               <span />
-              <span />
             </button>
           </div>
         </div>
       </header>
 
-      {menuOpen ? (
-        <>
-          <div
-            className="mobile-scrim"
-            aria-hidden="true"
-            onClick={() => setMenuOpen(false)}
-          />
-          <div
-            className="mobile-menu"
-            ref={menuRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-          >
-            <div className="wrap">
-              <div className="mobile-menu__head">
-                <span className="mark" aria-hidden="true" />
-                <button
-                  type="button"
-                  className="menu-toggle menu-toggle--close"
-                  aria-label="Close menu"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <span />
-                  <span />
-                  <span />
-                </button>
-              </div>
-              <nav aria-label="Main">
-                {NAV.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={isActive(pathname, item.href) ? 'page' : undefined}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-              <Link className="btn" href="/create">
-                Create Your Gift
-              </Link>
-            </div>
-          </div>
-        </>
-      ) : null}
+      <MobileMenu
+        items={NAV}
+        pathname={pathname}
+        isOpen={menuOpen}
+        onClose={closeMenu}
+      />
     </>
   );
 }

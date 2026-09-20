@@ -5,6 +5,75 @@
    something genuinely floats. Every value is a token.
    ============================================================ */
 
+/* ============================================================
+   MOTION
+   The kit's generated token layer carries colour, space, radius
+   and shadow but no motion, and it must not be hand-edited, so
+   the curves live here. Promote them into the design system the
+   next time it is regenerated.
+
+   One curve family, four jobs:
+     out-soft  the kit's own button-sweep curve — the default
+     in-soft   for things leaving; leaving is always quicker
+     spring    a ~7% overshoot, and the reason a press feels like
+               a press rather than a state change
+     expo      a long heavy settle, for panels and whole sections
+
+   The displacements are deliberately off the 4px layout scale.
+   Motion reads as weight below 4px and as a jump above 8px, so
+   these are their own thing and never stand in for spacing.
+   ============================================================ */
+
+:root {
+  --ease-out-soft: cubic-bezier(.22,.7,.28,1);
+  --ease-in-soft:  cubic-bezier(.55,.08,.72,.2);
+  --ease-spring:   cubic-bezier(.34,1.45,.5,1);
+  --ease-expo:     cubic-bezier(.16,1,.3,1);
+
+  --dur-press: 110ms;
+  --dur-fast:  200ms;
+  --dur-base:  320ms;
+  --dur-slow:  460ms;
+  --dur-panel: 640ms;
+
+  --lift-sm: 2px;
+  --lift-md: 6px;
+  --lift-lg: 10px;
+  --squish:  .96;
+}
+
+/* In-page anchors glide instead of cutting. scroll-padding keeps the
+   sticky masthead from landing on top of the heading it jumped to. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(env(safe-area-inset-top, 0px) + var(--space-9));
+}
+
+/* ---- Paper grain ----
+   Flat colour is what makes a screen look like a screen. Two fixed noise
+   layers at different scales give it tooth. They are masks rather than
+   images, so --grain-a / --grain-b carry the colour and the texture
+   re-tints itself in dark. Below every piece of chrome, inert to input. */
+
+body::before,
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat; mask-repeat: repeat;
+}
+body::before {
+  background: var(--grain-a);
+  -webkit-mask-size: 150px 150px; mask-size: 150px 150px;
+}
+body::after {
+  background: var(--grain-b);
+  -webkit-mask-size: 430px 430px; mask-size: 430px 430px;
+}
+@supports not ((mask-image: url("#x")) or (-webkit-mask-image: url("#x"))) {
+  body::before, body::after { display: none; }
+}
+
 /* ---- Base links ----
    The generated token layer styles only specific link classes, so anything
    inline (an eyebrow link, a link inside prose) would otherwise fall back to
@@ -66,11 +135,13 @@ a:hover { color: var(--ember-strong); }
 .head--sub h2 { font-size: 32px; line-height: 38px; font-weight: 400; }
 
 .textlink {
+  display: inline-block;
   font-size: 14px; font-weight: 500; letter-spacing: .02em; color: var(--ember);
   text-decoration: none; border-bottom: 1px solid currentColor; padding-bottom: 2px;
-  transition: color 160ms ease-out;
+  transition: color var(--dur-fast) ease-out, transform var(--dur-slow) var(--ease-spring);
 }
-.textlink:hover { color: var(--ember-strong); }
+.textlink:hover, .textlink:focus-visible { color: var(--ember-strong); transform: translateX(5px); }
+.textlink:active { transform: translateX(5px) scale(.97); transition-duration: var(--dur-press); }
 
 @media (max-width: 760px) {
   .head h1,
@@ -87,9 +158,25 @@ a:hover { color: var(--ember-strong); }
   font-size: 11px; line-height: 18px; letter-spacing: .18em; text-transform: uppercase;
 }
 
+/* Frosted rather than opaque: the page passing underneath is the thing that
+   makes a header feel like it is floating. The hairline and the shadow are
+   held back until there is something to separate from. */
 .masthead {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
-  background: var(--surface); border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-base) var(--ease-out-soft),
+              box-shadow var(--dur-base) var(--ease-out-soft),
+              background-color var(--dur-base) var(--ease-out-soft);
+}
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .masthead { background: var(--surface); }
+}
+.masthead[data-scrolled] {
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 4%, transparent);
 }
 .masthead__in {
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -100,48 +187,72 @@ a:hover { color: var(--ember-strong); }
 .mark {
   width: 164px; height: 44px; display: block; flex: none;
   background: var(--logo) center left / contain no-repeat;
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-spring), opacity var(--dur-fast) ease-out;
 }
+a.mark:hover { opacity: .78; }
+a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-press); }
 
 .nav { display: flex; align-items: center; justify-content: center; gap: var(--space-6); }
+/* The rule wipes in from the left and leaves to the right, so the link
+   reads as something the pointer pushed through rather than switched on. */
 .nav a {
-  font-size: 14px; line-height: 22px; color: var(--ink-muted); text-decoration: none;
-  transition: color 160ms ease-out; white-space: nowrap;
+  position: relative; font-size: 14px; line-height: 22px; color: var(--ink-muted);
+  text-decoration: none; white-space: nowrap; padding-block: var(--space-1);
+  transition: color var(--dur-fast) var(--ease-out-soft);
 }
-.nav a:hover { color: var(--ink); }
+.nav a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: currentColor; transform: scaleX(0); transform-origin: right center;
+  transition: transform var(--dur-base) var(--ease-out-soft);
+}
+.nav a:hover, .nav a:focus-visible { color: var(--ink); }
+.nav a:hover::after, .nav a:focus-visible::after { transform: scaleX(1); transform-origin: left center; }
 .nav a[aria-current="page"] { color: var(--ember); }
+.nav a[aria-current="page"]::after { transform: scaleX(1); transform-origin: left center; }
 
 .masthead__end { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-4); }
 
 .cart {
   display: inline-flex; align-items: center; gap: var(--space-2); background: none;
-  border: 0; padding: var(--space-2); font: inherit; font-size: 14px; color: var(--ink-muted);
-  cursor: pointer; transition: color 160ms ease-out;
+  border: 0; padding: var(--space-2) var(--space-3); font: inherit; font-size: 14px;
+  color: var(--ink-muted); cursor: pointer; border-radius: var(--radius-pill);
+  transition: color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out,
+              transform var(--dur-slow) var(--ease-spring);
 }
-.cart:hover { color: var(--ink); }
-.cart b { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink); }
+.cart:hover { color: var(--ink); background: var(--ember-soft); }
+.cart:active { transform: scale(var(--squish)); transition-duration: var(--dur-press); }
+.cart b {
+  font-weight: 500; font-variant-numeric: tabular-nums; color: var(--ink);
+  display: inline-block;
+}
+/* React remounts this on every change of count, which replays the pop. */
+.cart b[data-bump] { animation: count-bump var(--dur-slow) var(--ease-spring); }
+@keyframes count-bump {
+  0%   { transform: scale(1); }
+  34%  { transform: scale(1.38); }
+  100% { transform: scale(1); }
+}
 
-/* Hamburger — three hairlines that become a cross. */
+/* Two hairlines, uneven until you touch them, folding into a cross. */
 .menu-toggle {
-  display: none; width: 40px; height: 40px; padding: 0;
+  display: none; width: 44px; height: 44px; padding: 0;
   background: none; border: 0; cursor: pointer; color: var(--ink);
-  position: relative; flex: none;
+  position: relative; flex: none; border-radius: var(--radius-pill);
+  transition: background-color 240ms ease-out, transform 320ms var(--ease-spring);
 }
+.menu-toggle:hover { background: var(--ember-soft); }
+.menu-toggle:active { transform: scale(.88); transition-duration: 120ms; }
 .menu-toggle span {
-  position: absolute; left: 9px; width: 22px; height: 1px; background: currentColor;
-  transition: transform 200ms ease-out, opacity 160ms ease-out;
+  position: absolute; left: 13px; width: 18px; height: 1.5px; border-radius: 2px;
+  background: currentColor;
+  transition: transform 460ms var(--ease-spring), width 320ms var(--ease-out-soft);
 }
-.menu-toggle span:nth-child(1) { top: 14px; }
-.menu-toggle span:nth-child(2) { top: 20px; }
-.menu-toggle span:nth-child(3) { top: 26px; }
-.menu-toggle[aria-expanded="true"] span:nth-child(1),
-.menu-toggle--close span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-.menu-toggle[aria-expanded="true"] span:nth-child(2),
-.menu-toggle--close span:nth-child(2) { opacity: 0; }
-.menu-toggle[aria-expanded="true"] span:nth-child(3),
-.menu-toggle--close span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
-
-/* The in-menu close button is always visible, at any width. */
-.menu-toggle--close { display: block; }
+.menu-toggle span:nth-child(1) { top: 19px; }
+.menu-toggle span:nth-child(2) { top: 25px; width: 11px; }
+.menu-toggle:hover span:nth-child(2) { width: 18px; }
+.menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(3px) rotate(45deg); }
+.menu-toggle[aria-expanded="true"] span:nth-child(2) { transform: translateY(-3px) rotate(-45deg); width: 18px; }
 
 @media (max-width: 960px) {
   .masthead__in { grid-template-columns: auto 1fr; }
@@ -150,35 +261,109 @@ a:hover { color: var(--ember-strong); }
   .masthead__end .btn { display: none; }
 }
 @media (max-width: 520px) {
-  .cart span { display: none; }
   .mark { width: 132px; height: 36px; }
+  .cart { padding-inline: var(--space-2); }
 }
 
-/* ---- Mobile menu ---- */
+/* ============================================================
+   FULL-SCREEN MENU
+   The header doesn't drop a panel — the whole view becomes the
+   menu, with the page blurred behind it. It stays mounted while
+   closing so the exit animation can actually run.
+   ============================================================ */
 
-.mobile-scrim {
-  position: fixed; inset: 0; z-index: 30; background: rgba(30, 25, 19, .38);
-  opacity: 0; animation: fade-in 200ms ease-out forwards;
+.menu {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; flex-direction: column; overflow-y: auto;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  -webkit-backdrop-filter: blur(30px) saturate(1.3);
+  backdrop-filter: blur(30px) saturate(1.3);
+  animation: menu-in 520ms var(--ease-out-soft) forwards;
 }
-.mobile-menu {
-  position: fixed; inset-inline: 0; top: 0; z-index: 31;
-  background: var(--surface); border-bottom: 1px solid var(--line);
-  box-shadow: var(--shadow-overlay);
-  padding: var(--space-4) 0 var(--space-6);
-  transform: translateY(-8px); opacity: 0;
-  animation: drop-in 220ms ease-out forwards;
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .menu { background: var(--surface); }
 }
-.mobile-menu__head { display: flex; align-items: center; justify-content: space-between; }
-.mobile-menu nav { display: flex; flex-direction: column; margin-top: var(--space-4); }
-.mobile-menu nav a {
-  padding-block: var(--space-4); font-size: 18px; line-height: 26px;
-  color: var(--ink); text-decoration: none; border-top: 1px solid var(--line);
-}
-.mobile-menu nav a[aria-current="page"] { color: var(--ember); }
-.mobile-menu .btn { margin-top: var(--space-5); width: 100%; }
+.menu[data-closing] { animation: menu-out 300ms var(--ease-in-soft) forwards; }
 
-@keyframes fade-in { to { opacity: 1; } }
-@keyframes drop-in { to { transform: none; opacity: 1; } }
+@keyframes menu-in {
+  from { opacity: 0; transform: scale(1.035); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes menu-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.02); }
+}
+
+/* The announcement bar reads through the blur as a band across the top, so
+   the wordmark and the close start below it rather than on it. */
+.menu__top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-block: calc(var(--space-7) + env(safe-area-inset-top, 0px)) var(--space-4);
+  flex: none;
+}
+
+.menu__close {
+  width: 44px; height: 44px; padding: 0; position: relative;
+  background: none; border: 0; cursor: pointer; color: var(--ink);
+  border-radius: var(--radius-pill); flex: none;
+  transition: background-color 240ms ease-out, transform 420ms var(--ease-spring);
+}
+.menu__close:hover { background: var(--ember-soft); transform: rotate(90deg); }
+.menu__close:active { transform: rotate(90deg) scale(.86); transition-duration: 120ms; }
+.menu__close span {
+  position: absolute; left: 13px; top: 21px; width: 18px; height: 1.5px;
+  border-radius: 2px; background: currentColor;
+}
+.menu__close span:nth-child(1) { transform: rotate(45deg); }
+.menu__close span:nth-child(2) { transform: rotate(-45deg); }
+
+.menu__nav {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+  padding-block: var(--space-6); gap: 0;
+}
+
+.menu__link {
+  display: block; text-decoration: none; color: var(--ink);
+  padding-block: var(--space-3);
+  opacity: 0; transform: translateY(20px);
+  animation: menu-link-in 640ms var(--ease-spring) forwards;
+  animation-delay: calc(140ms + var(--i) * 65ms);
+}
+.menu[data-closing] .menu__link {
+  animation: menu-link-out 200ms var(--ease-in-soft) forwards;
+  animation-delay: calc(var(--i) * 26ms);
+}
+
+@keyframes menu-link-in  { to   { opacity: 1; transform: none; } }
+@keyframes menu-link-out { from { opacity: 1; transform: none; }
+                           to   { opacity: 0; transform: translateY(-10px); } }
+
+.menu__word {
+  display: block; font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(38px, 11vw, 60px); line-height: 1.08; letter-spacing: -.015em;
+  transition: transform 460ms var(--ease-spring), color 240ms ease-out;
+}
+.menu__link:hover .menu__word,
+.menu__link:focus-visible .menu__word { transform: translateX(12px); color: var(--ember); }
+.menu__link:active .menu__word { transform: translateX(12px) scale(.98); transition-duration: 120ms; }
+.menu__link[aria-current="page"] .menu__word { color: var(--ember); }
+
+.menu__rule {
+  display: block; height: 1px; background: var(--line); margin-top: var(--space-3);
+  transform: scaleX(1); transform-origin: left;
+  transition: background-color 300ms ease-out;
+}
+.menu__link:hover .menu__rule { background: var(--line-strong); }
+
+.menu__foot {
+  flex: none; display: flex; flex-direction: column; gap: var(--space-4);
+  padding-bottom: calc(var(--space-7) + env(safe-area-inset-bottom, 0px));
+  opacity: 0; transform: translateY(20px);
+  animation: menu-link-in 640ms var(--ease-spring) forwards;
+  animation-delay: calc(140ms + var(--i) * 65ms);
+}
+.menu[data-closing] .menu__foot { animation: menu-link-out 200ms var(--ease-in-soft) forwards; animation-delay: 0ms; }
+.menu__foot .btn { width: 100%; }
 
 /* ============================================================
    HERO + SHELF
@@ -188,6 +373,20 @@ a:hover { color: var(--ember-strong); }
   text-align: center; padding-block: var(--space-9) var(--space-7);
   display: flex; flex-direction: column; align-items: center; gap: var(--space-5);
 }
+
+/* The hero settles line by line on load. It is CSS, not script, so it runs
+   with JS off and it cannot strand anything invisible: the animation fills
+   forwards and every line ends at its resting state. */
+.hero > * {
+  opacity: 0; transform: translateY(18px);
+  animation: hero-in 900ms var(--ease-expo) forwards;
+}
+.hero > *:nth-child(1) { animation-delay:  40ms; }
+.hero > *:nth-child(2) { animation-delay: 120ms; }
+.hero > *:nth-child(3) { animation-delay: 220ms; }
+.hero > *:nth-child(4) { animation-delay: 320ms; }
+.hero > *:nth-child(5) { animation-delay: 420ms; }
+@keyframes hero-in { to { opacity: 1; transform: none; } }
 .hero h1 {
   font-family: var(--font-display); font-weight: 300; font-size: 72px; line-height: 68px;
   letter-spacing: -.015em; margin: 0; text-wrap: balance;
@@ -210,24 +409,65 @@ a:hover { color: var(--ember-strong); }
 }
 
 /* The three pieces stood on one line. Sizes are optical, not mathematical:
-   each object is scaled so it reads at its true relative size on the shelf. */
+   each object is scaled so it reads at its true relative size on the shelf.
+   Each one is a link now — three of the best pieces in the catalogue sitting
+   under the fold with nothing to click was the flow problem here. */
 .shelf {
   display: grid; grid-template-columns: repeat(3, 1fr); align-items: end;
   gap: var(--space-8); border-bottom: 1px solid var(--line-strong);
   padding-bottom: var(--space-6);
 }
+.shelf__item {
+  display: block; text-decoration: none; color: inherit; min-width: 0;
+  opacity: 0; transform: translateY(26px);
+  animation: shelf-in 1000ms var(--ease-expo) forwards;
+  animation-delay: calc(360ms + var(--i) * 120ms);
+}
+@keyframes shelf-in { to { opacity: 1; transform: none; } }
+
 .shelf figure {
   margin: 0; display: flex; flex-direction: column; align-items: center;
   justify-content: flex-end; gap: var(--space-3); min-width: 0;
 }
 .shelf img { display: block; width: auto; object-fit: contain; }
+
+/* The object lifts off its own shadow, and the shadow spreads and softens as
+   it goes — which is the whole trick. A lift with a fixed shadow reads pasted. */
+.shelf__object { position: relative; display: block; }
+.shelf__object img {
+  position: relative; z-index: 1;
+  transition: transform var(--dur-panel) var(--ease-spring);
+}
+.shelf__object::after {
+  content: ""; position: absolute; left: 50%; bottom: -4px;
+  width: 74%; height: 12px; transform: translateX(-50%);
+  border-radius: 50%; opacity: .85;
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, var(--ink) 30%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 8%, transparent) 45%,
+    transparent 72%);
+  transition: width var(--dur-panel) var(--ease-spring),
+              height var(--dur-panel) var(--ease-spring),
+              opacity var(--dur-panel) var(--ease-out-soft);
+}
+.shelf__item:hover .shelf__object img,
+.shelf__item:focus-visible .shelf__object img { transform: translateY(calc(var(--lift-lg) * -1)); }
+.shelf__item:hover .shelf__object::after,
+.shelf__item:focus-visible .shelf__object::after { width: 92%; height: 15px; opacity: .5; }
+.shelf__item:active .shelf__object img {
+  transform: translateY(-3px); transition-duration: var(--dur-press);
+}
+
 .shelf--a img { height: 210px; }
 .shelf--b img { height: 330px; }
 .shelf--c img { height: 150px; }
 .shelf figcaption {
   font-size: 11px; line-height: 16px; letter-spacing: .14em; text-transform: uppercase;
   color: var(--ink-subtle); text-align: center; max-width: 18ch; text-wrap: balance;
+  transition: color var(--dur-fast) ease-out;
 }
+.shelf__item:hover figcaption,
+.shelf__item:focus-visible figcaption { color: var(--ember); }
 
 @media (max-width: 860px) {
   .shelf { gap: var(--space-5); }
@@ -273,9 +513,21 @@ a:hover { color: var(--ember-strong); }
 .card {
   display: flex; flex-direction: column; background: var(--surface-raised);
   border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden;
-  text-decoration: none; color: inherit; transition: box-shadow 200ms ease-out;
+  text-decoration: none; color: inherit;
+  transition: transform var(--dur-slow) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-out-soft),
+              border-color var(--dur-base) var(--ease-out-soft);
 }
-.card:hover { box-shadow: var(--shadow-raise); }
+.card:hover,
+.card:focus-visible {
+  transform: translateY(calc(var(--lift-md) * -1));
+  box-shadow: var(--shadow-raise); border-color: var(--line-strong);
+}
+/* Press takes the lift back out and compresses a little. The card gives. */
+.card:active {
+  transform: translateY(-1px) scale(.985);
+  transition-duration: var(--dur-press);
+}
 .card:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 /* The photography is cut out on transparent ground, so the object sits in the
@@ -290,9 +542,13 @@ a:hover { color: var(--ember-strong); }
 .card__media img {
   position: absolute; inset: 0; width: 100%; height: 100%;
   padding: var(--space-5); object-fit: contain;
-  transition: transform 260ms ease-out;
+  transition: transform var(--dur-panel) var(--ease-spring);
 }
-.card:hover .card__media img { transform: translateY(-4px); }
+/* The piece rises further than the card does, so the two separate slightly.
+   Translation only — the system is firm that product photography never scales. */
+.card:hover .card__media img,
+.card:focus-visible .card__media img { transform: translateY(-9px); }
+.card:active .card__media img { transform: translateY(-3px); transition-duration: var(--dur-press); }
 
 .card__body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); flex: 1; }
 .card__title {
@@ -313,14 +569,23 @@ a:hover { color: var(--ember-strong); }
   margin-top: auto; padding-top: var(--space-4);
   font-size: 13px; font-weight: 500; letter-spacing: .06em;
   text-transform: uppercase; color: var(--ember);
+  display: inline-flex; align-items: center; gap: var(--space-2);
 }
+.card__cta::after {
+  content: "\2192"; display: inline-block;
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+.card:hover .card__cta::after,
+.card:focus-visible .card__cta::after { transform: translateX(7px); }
 
 .tag {
-  position: absolute; top: var(--space-3); left: var(--space-3);
+  position: absolute; top: var(--space-3); left: var(--space-3); z-index: 1;
   font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
   padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm);
   background: var(--ember-soft); color: var(--ember-strong);
+  transition: transform var(--dur-slow) var(--ease-spring);
 }
+.card:hover .tag { transform: translate(-2px, -2px); }
 
 .swatch { width: 10px; height: 10px; border-radius: var(--radius-sm); display: inline-block; flex: none; }
 .swatch--acacia { background: var(--acacia); }
@@ -334,10 +599,28 @@ a:hover { color: var(--ember-strong); }
   .card__title { font-size: 19px; line-height: 25px; }
 }
 
+/* ---- Buttons: weight ----
+   The kit owns the button's hover treatment — the fill sweeps in from the
+   left and the colours swap — and that stays exactly as it is. This adds
+   only the physical half: a couple of pixels of lift, and a press that
+   actually compresses. Nothing here touches colour. */
+
+.btn {
+  transition: color var(--dur-fast) ease-out, border-color var(--dur-fast) ease-out,
+              transform var(--dur-slow) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.btn:hover, .btn:focus-visible { transform: translateY(calc(var(--lift-sm) * -1)); }
+.btn:active {
+  transform: translateY(0) scale(var(--squish));
+  transition-duration: var(--dur-press);
+}
+
 /* ---- Filter chips ---- */
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
 .chip { border-radius: var(--radius-pill); }
+.chip:active { transform: scale(.93); }
 .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .chip[aria-pressed="true"]::before { background: var(--ember); }
 .chip[aria-pressed="true"]:hover,
@@ -466,12 +749,28 @@ a:hover { color: var(--ember-strong); }
   border-top: 1px solid var(--line);
 }
 .foot nav { display: flex; flex-wrap: wrap; gap: var(--space-6); }
+.foot nav a {
+  position: relative; font-size: 14px; line-height: 22px; color: var(--ink-muted);
+  text-decoration: none; padding-block: var(--space-1);
+  transition: color var(--dur-fast) var(--ease-out-soft);
+}
+.foot nav a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: currentColor; transform: scaleX(0); transform-origin: right center;
+  transition: transform var(--dur-base) var(--ease-out-soft);
+}
+.foot nav a:hover, .foot nav a:focus-visible { color: var(--ink); }
+.foot nav a:hover::after, .foot nav a:focus-visible::after { transform: scaleX(1); transform-origin: left center; }
 .foot a { font-size: 14px; line-height: 22px; color: var(--ink-muted); text-decoration: none; }
 .foot a:hover { color: var(--ink); }
 .foot .caption { max-width: 36ch; display: block; }
 .foot__social { display: flex; gap: var(--space-4); margin-top: var(--space-4); }
-.foot__social a { display: inline-flex; color: var(--ink-subtle); }
-.foot__social a:hover { color: var(--ink); }
+.foot__social a {
+  display: inline-flex; color: var(--ink-subtle);
+  transition: color var(--dur-fast) ease-out, transform var(--dur-slow) var(--ease-spring);
+}
+.foot__social a:hover, .foot__social a:focus-visible { color: var(--ink); transform: translateY(-3px); }
+.foot__social a:active { transform: translateY(0) scale(.88); transition-duration: var(--dur-press); }
 .legal { padding-bottom: var(--space-8); }
 
 /* ============================================================
@@ -492,9 +791,12 @@ a:hover { color: var(--ember-strong); }
 .pdp__thumb {
   width: 72px; height: 72px; padding: 0; border: 1px solid var(--line);
   background: var(--surface-sunken); cursor: pointer; position: relative;
-  transition: border-color 180ms ease-out, opacity 180ms ease-out; opacity: .7;
-  border-radius: var(--radius-sm); overflow: hidden;
+  transition: border-color var(--dur-fast) ease-out, opacity var(--dur-fast) ease-out,
+              transform var(--dur-slow) var(--ease-spring);
+  opacity: .7; border-radius: var(--radius-sm); overflow: hidden;
 }
+.pdp__thumb:hover { transform: translateY(-3px); }
+.pdp__thumb:active { transform: translateY(0) scale(.92); transition-duration: var(--dur-press); }
 .pdp__thumb img, .pdp__thumb video {
   position: absolute; inset: 0; width: 100%; height: 100%;
   padding: var(--space-2); object-fit: contain;
@@ -532,19 +834,30 @@ a:hover { color: var(--ember-strong); }
    CART DRAWER
    ============================================================ */
 
-.drawer-scrim {
-  position: fixed; inset: 0; z-index: 40; background: rgba(30, 25, 19, .38);
-  opacity: 0; animation: fade-in 200ms ease-out forwards;
+.scrim {
+  position: fixed; inset: 0; z-index: 40; opacity: 0;
+  background: color-mix(in srgb, var(--surface-inverse) 40%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  animation: fade-in 360ms var(--ease-out-soft) forwards;
 }
+.scrim[data-closing] { animation: fade-out 260ms var(--ease-in-soft) forwards; }
+
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
-  width: min(420px, 100vw); background: var(--surface-raised);
+  width: min(430px, 100vw); background: var(--surface-raised);
   border-left: 1px solid var(--line); box-shadow: var(--shadow-overlay);
   display: flex; flex-direction: column;
-  transform: translateX(8px); opacity: 0;
-  animation: slide-in 220ms ease-out forwards;
+  /* Expo-out rather than a spring: an overshoot here would pull the panel
+     off its own right edge and flash a gap. */
+  animation: drawer-in 560ms var(--ease-expo) forwards;
 }
-@keyframes slide-in { to { transform: none; opacity: 1; } }
+.drawer[data-closing] { animation: drawer-out 280ms var(--ease-in-soft) forwards; }
+
+@keyframes drawer-in  { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes drawer-out { from { transform: none; } to { transform: translateX(100%); } }
+@keyframes fade-in  { to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 
 .drawer__head {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
@@ -566,8 +879,13 @@ a:hover { color: var(--ember-strong); }
 .line__controls { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--space-3); }
 
 .qty { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
-.qty button { background: none; border: 0; cursor: pointer; padding: var(--space-1) var(--space-3); color: var(--ink); font: inherit; line-height: 20px; }
+.qty button {
+  background: none; border: 0; cursor: pointer; padding: var(--space-1) var(--space-3);
+  color: var(--ink); font: inherit; line-height: 20px;
+  transition: background-color var(--dur-fast) ease-out, transform var(--dur-slow) var(--ease-spring);
+}
 .qty button:hover { background: var(--surface-sunken); }
+.qty button:active { transform: scale(.82); transition-duration: var(--dur-press); }
 .qty span { min-width: 28px; text-align: center; font-size: 14px; font-variant-numeric: tabular-nums; }
 
 .line__remove {
@@ -603,9 +921,16 @@ a:hover { color: var(--ember-strong); }
   display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4);
   background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-md);
   cursor: pointer; text-align: left; font: inherit; color: inherit;
-  transition: border-color 180ms ease-out, background-color 180ms ease-out;
+  transition: border-color var(--dur-fast) ease-out, background-color var(--dur-fast) ease-out,
+              transform var(--dur-slow) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-out-soft);
 }
-.option:hover { border-color: var(--line-strong); }
+.option:hover {
+  border-color: var(--line-strong);
+  transform: translateY(calc(var(--lift-sm) * -1)); box-shadow: var(--shadow-raise);
+}
+.option:active { transform: translateY(0) scale(.98); transition-duration: var(--dur-press); }
+.option[aria-pressed="true"]:not(:active) { transform: none; box-shadow: none; }
 .option[aria-pressed="true"] { border-color: var(--ember); background: var(--ember-soft); }
 .option__media { aspect-ratio: 4 / 3; background: var(--surface-sunken); position: relative; }
 .option__media img {
@@ -651,9 +976,19 @@ a:hover { color: var(--ember-strong); }
   text-decoration: none; color: inherit;
 }
 .post-item:first-child { padding-top: 0; }
-.post-item:hover .post-item__title { color: var(--ember); }
+.post-item:hover .post-item__title,
+.post-item:focus-visible .post-item__title { color: var(--ember); }
 .post-item__media { aspect-ratio: 4 / 3; background: var(--surface-sunken); display: grid; place-items: center; overflow: hidden; }
-.post-item__media img { width: 100%; height: 100%; object-fit: cover; }
+/* Editorial photography is a photograph, not a cut-out product, so it may
+   scale inside its frame. Product images still never do. */
+.post-item__media img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 900ms var(--ease-expo);
+}
+.post-item:hover .post-item__media img,
+.post-item:focus-visible .post-item__media img { transform: scale(1.05); }
+.post-item__body { transition: transform var(--dur-slow) var(--ease-spring); }
+.post-item:hover .post-item__body { transform: translateX(6px); }
 .post-item__body { display: flex; flex-direction: column; gap: var(--space-3); }
 .post-item__meta { margin: 0; font-size: 12px; line-height: 18px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-subtle); }
 .post-item__title { font-family: var(--font-display); font-size: 32px; line-height: 38px; font-weight: 400; margin: 0; transition: color 160ms ease-out; text-wrap: balance; }
@@ -673,7 +1008,11 @@ a:hover { color: var(--ember-strong); }
 .split { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: var(--space-8); align-items: center; }
 .split--reverse .split__media { order: -1; }
 .split__media { aspect-ratio: 4 / 3; background: var(--surface-sunken); overflow: hidden; }
-.split__media img { width: 100%; height: 100%; object-fit: cover; }
+.split__media img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 1200ms var(--ease-expo);
+}
+.split:hover .split__media img { transform: scale(1.04); }
 @media (max-width: 900px) {
   .split { grid-template-columns: 1fr; gap: var(--space-6); }
   .split--reverse .split__media { order: 0; }
@@ -700,18 +1039,61 @@ a:hover { color: var(--ember-strong); }
    first paint and any link preview show the real page.
    ============================================================ */
 
-[data-reveal] { transition: opacity 320ms ease-out, transform 320ms ease-out; }
-.reveal-armed [data-reveal]:not(.is-in) { opacity: 0; transform: translateY(8px); }
+/* A longer travel on a heavier curve. The scale is small enough that you
+   read it as the section arriving from depth rather than as a zoom. */
+[data-reveal] {
+  transition: opacity var(--dur-panel) var(--ease-out-soft),
+              transform var(--dur-panel) var(--ease-expo);
+}
+.reveal-armed [data-reveal]:not(.is-in) {
+  opacity: 0; transform: translateY(22px) scale(.985);
+}
+
+/* ============================================================
+   REDUCED MOTION
+   One blanket rule rather than a list of selectors — the list
+   went stale the moment the drawer and menu were rewritten, and
+   left three dead class names behind. Animations are collapsed
+   rather than removed: every entrance here fills forwards, so a
+   1ms run lands on the resting state instead of stranding an
+   element at opacity 0.
+   ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+  html { scroll-behavior: auto; }
+
+  /* Nothing is displaced on hover or press. */
+  .btn:hover, .btn:focus-visible, .btn:active,
+  .card:hover, .card:focus-visible, .card:active,
+  .card:hover .card__media img, .card:focus-visible .card__media img,
+  .card:active .card__media img,
+  .card:hover .card__cta::after, .card:focus-visible .card__cta::after,
+  .card:hover .tag,
+  .cart:active, a.mark:active,
+  .chip:active, .option:hover, .option:active,
+  .qty button:active,
+  .textlink:hover, .textlink:focus-visible, .textlink:active,
+  .post-item:hover .post-item__media img, .post-item:hover .post-item__body,
+  .split:hover .split__media img,
+  .pdp__thumb:hover, .pdp__thumb:active,
+  .foot__social a:hover, .foot__social a:active,
+  .menu-toggle:active, .menu__close:hover, .menu__close:active,
+  .menu__link:hover .menu__word, .menu__link:focus-visible .menu__word,
+  .menu__link:active .menu__word,
+  .shelf__item:hover .shelf__object img,
+  .shelf__item:focus-visible .shelf__object img,
+  .shelf__item:active .shelf__object img { transform: none; }
+
+  /* Entrances resolve to their resting state rather than their start state. */
+  .hero > *, .shelf__item, .menu__link, .menu__foot,
   .reveal-armed [data-reveal]:not(.is-in) { opacity: 1; transform: none; }
-  [data-reveal],
-  .card__media img,
-  .menu-toggle span,
-  .nav a,
-  .textlink { transition-duration: 1ms; }
-  .card:hover .card__media img { transform: none; }
-  .mobile-menu, .mobile-scrim, .drawer, .drawer-scrim { animation-duration: 1ms; }
 }
 
 /* ============================================================

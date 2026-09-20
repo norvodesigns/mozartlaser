@@ -1,70 +1,43 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
+import { useOverlay } from './useOverlay';
 import { formatPrice } from '@/lib/products';
+
+const EXIT_MS = 280;
 
 export function CartDrawer() {
   const { items, isOpen, close, total, setQuantity, remove, checkout, checkoutState } =
     useCart();
-  const panelRef = useRef<HTMLDivElement>(null);
+  const { rendered, closing, panelRef } = useOverlay({
+    isOpen,
+    onClose: close,
+    exitMs: EXIT_MS,
+  });
 
-  // Modal behaviour: lock the page, trap focus, Escape closes, focus returns.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const opener = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    panelRef.current?.querySelector<HTMLElement>('button, a, input')?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        close();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-
-      const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), input, select, textarea',
-      );
-      if (!focusable || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      opener?.focus();
-    };
-  }, [isOpen, close]);
-
-  if (!isOpen) return null;
+  if (!rendered) return null;
 
   return (
     <>
-      <div className="drawer-scrim" onClick={close} aria-hidden="true" />
+      <div
+        className="scrim"
+        data-closing={closing || undefined}
+        onClick={close}
+        aria-hidden="true"
+      />
       <aside
         className="drawer"
         ref={panelRef}
+        data-closing={closing || undefined}
         role="dialog"
         aria-modal="true"
         aria-label="Your cart"
       >
         <div className="drawer__head">
           <h2 className="drawer__title">Your cart</h2>
-          <button type="button" className="btn btn--secondary btn--sm" onClick={close}>
-            Close
+          <button type="button" className="menu__close" onClick={close} aria-label="Close cart">
+            <span />
+            <span />
           </button>
         </div>
 

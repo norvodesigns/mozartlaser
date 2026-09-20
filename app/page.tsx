@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductCard } from '@/components/ProductCard';
@@ -13,13 +14,16 @@ const SHELF = [
   { slug: 'dragon-coin', variant: 'c', caption: 'Book Dragon Coin' },
 ] as const;
 
+/* Six pieces the shelf does not already show. The shelf and this grid sat
+   three products apart before, so the top of the page introduced the same
+   objects twice and the catalogue looked half its real size. */
 const FEATURED = [
-  'wanderer-bookmark',
   'np-coasters',
-  'golden-gate-bridge',
-  'leaf-bookmark',
-  'dragon-coin',
-  'adventurers-bookmark',
+  'dove',
+  'tolkien-bookmark',
+  'celtic-cross',
+  'moon',
+  'catalina',
 ];
 
 const STEPS = [
@@ -97,25 +101,36 @@ export default function HomePage() {
       </section>
 
       <div className="wrap">
+        {/* Each piece links through. The object sits in its own wrapper so it
+            can lift off a ground shadow instead of floating flat. */}
         <div className="shelf">
-          {shelf.map(({ product, variant, caption }) =>
+          {shelf.map(({ product, variant, caption }, index) =>
             product ? (
-              <figure key={product.slug} className={`shelf--${variant}`}>
-                <Image
-                  src={product.images[0]}
-                  alt={`${product.name}, engraved ${product.wood ?? 'hardwood'}`}
-                  width={imageSize(product.images[0]).w}
-                  height={imageSize(product.images[0]).h}
-                  priority
-                  sizes="(max-width: 420px) 30vw, (max-width: 860px) 26vw, 320px"
-                />
-                <figcaption>{caption}</figcaption>
-              </figure>
+              <Link
+                key={product.slug}
+                href={`/products/${product.slug}`}
+                className={`shelf__item shelf--${variant}`}
+                style={{ '--i': index } as CSSProperties}
+              >
+                <figure>
+                  <span className="shelf__object">
+                    <Image
+                      src={product.images[0]}
+                      alt={`${product.name}, engraved ${product.wood ?? 'hardwood'}`}
+                      width={imageSize(product.images[0]).w}
+                      height={imageSize(product.images[0]).h}
+                      priority
+                      sizes="(max-width: 420px) 30vw, (max-width: 860px) 26vw, 320px"
+                    />
+                  </span>
+                  <figcaption>{caption}</figcaption>
+                </figure>
+              </Link>
             ) : null,
           )}
         </div>
 
-        <ul className="spec">
+        <ul className="spec" data-reveal>
           {PROMISES.map((promise) => (
             <li key={promise}>{promise}</li>
           ))}
@@ -199,13 +214,13 @@ export default function HomePage() {
 
       <section className="wrap section" id="about">
         <div className="craft">
-          <div>
+          <div data-reveal>
             <p className="eyebrow">Craftsmanship</p>
             <p className="craft__quote">
               “Every mark the laser makes is a mark that <em>lasts</em>.”
             </p>
           </div>
-          <div>
+          <div data-reveal data-reveal-delay={90}>
             <p>
               Mozart Laser is a California-based studio dedicated to the art of precision
               engraving. We work with premium hardwoods to create gifts and decor that
@@ -245,7 +260,7 @@ export default function HomePage() {
       </section>
 
       <section className="band" id="create">
-        <div className="wrap band__in">
+        <div className="wrap band__in" data-reveal>
           <p className="eyebrow">Made to order</p>
           <h2>
             Ready to <em>Create?</em>

@@ -6,7 +6,8 @@ When a decision is close, take the quieter one.
 
 The system lives in a Design System artifact. Read `project/README.md` there for
 the full brand book before making visual decisions; `project/tokens.json` is the
-source of truth for every value.
+source of truth for every value — except motion, which the kit does not cover.
+See the motion rule below.
 
 ## Rules
 
@@ -38,8 +39,23 @@ source of truth for every value.
   both themes (3:1 for borders, focus rings and icons).
 - **Buttons** use the inverse-fill hover in `css/tokens.css`: the fill sweeps in
   from the left and the colours swap. Don't add a different hover treatment.
-- **Motion**: opacity and 4–8px translation only, 160–320ms, ease-out. No parallax,
-  no scale-on-hover for product images. Respect `prefers-reduced-motion`.
+- **Motion**: the design system's motion note ("opacity and 4–8px translation only,
+  160–240ms, ease-out") describes the old static site and Caleb has asked for more
+  than that on the rebuild. The rule for this repo is the motion layer at the top of
+  `styles/site.css`: four easings (`--ease-out-soft`, `--ease-in-soft`, `--ease-spring`,
+  `--ease-expo`) and five durations (`--dur-press` … `--dur-panel`). Use those; don't
+  write a raw `cubic-bezier` or a bare millisecond value into a rule.
+  - Hover displaces, press compresses. `--lift-sm`/`--lift-md`/`--lift-lg` and
+    `--squish` carry those amounts. They sit off the 4px spacing scale on purpose
+    and are never a substitute for spacing.
+  - **No scale on product photography, still.** Cut-out product images translate and
+    nothing else. Editorial photography inside an `overflow: hidden` frame may scale.
+  - No parallax, no cursor effects.
+  - Anything that animates in must fill forwards to its resting state, so a
+    collapsed or interrupted animation can never strand an element invisible.
+  - `prefers-reduced-motion` is handled by one blanket rule at the foot of
+    `styles/site.css`. Add new hover displacements to the `transform: none` list
+    there; don't start a second block.
 - **Voice**: plain sentences, no exclamation marks, no "luxury/premium/elevate/
   curated/artisanal". Say the material and the turnaround before you say it's lovely.
   Sentence case except eyebrow lines, which are uppercase in the markup. No emoji.
