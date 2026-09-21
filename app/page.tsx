@@ -8,9 +8,14 @@ import { getProduct, getProducts } from '@/lib/products';
 import { PROMISES } from '@/lib/site';
 
 /** The shelf: three real pieces stood on one line. Optical sizes, not equal ones. */
+/** The piece that leads the page. The most striking thing in the catalogue. */
+const HERO_SLUG = 'golden-gate-bridge';
+
+/* The shelf takes the ship board where the Golden Gate used to sit, since the
+   hero now carries that one. Nothing on this page appears twice. */
 const SHELF = [
   { slug: 'wanderer-bookmark', variant: 'a', caption: 'Wanderer Bookmark' },
-  { slug: 'golden-gate-bridge', variant: 'b', caption: 'Golden Gate Bridge Plaque' },
+  { slug: 'ship', variant: 'b', caption: 'Cutting Board with Ship' },
   { slug: 'dragon-coin', variant: 'c', caption: 'Book Dragon Coin' },
 ] as const;
 
@@ -73,31 +78,66 @@ export default function HomePage() {
     (p): p is NonNullable<typeof p> => Boolean(p),
   );
   const shelf = SHELF.map((entry) => ({ ...entry, product: getProduct(entry.slug) }));
+  const heroPiece = getProduct(HERO_SLUG);
 
   return (
     <>
-      {/* Hero — the one display-xl and the one ember element above the fold. */}
-      <section className="wrap hero">
-        <p className="eyebrow">Custom laser engraving</p>
-        <h1>
-          Precision <em>Laser</em> Engraved
-        </h1>
-        <p className="hero__blurb">
-          Mozart Laser is a California-based studio dedicated to the art of precision
-          engraving. We work with premium hardwoods to create gifts and decor that carry
-          meaning — personalized for the people who matter most.
-        </p>
-        <div className="hero__cta">
-          <Link className="btn btn--lg" href="/create">
-            Create Your Gift
-          </Link>
-          <Link className="btn btn--secondary btn--lg" href="/products">
-            Browse Products
-          </Link>
+      {/* Hero — the one display-xl and the one ember element above the fold.
+          The headline is split per word so each can wipe up from its own line. */}
+      <section className="hero">
+        <div className="wrap hero__in">
+          <div className="hero__copy">
+            <p className="eyebrow">Custom laser engraving</p>
+            <h1 className="hero__title">
+              <span className="hero__word" style={{ '--i': 0 } as CSSProperties}>
+                <span>Precision</span>
+              </span>{' '}
+              <span className="hero__word" style={{ '--i': 1 } as CSSProperties}>
+                <span>
+                  <em>Laser</em>
+                </span>
+              </span>{' '}
+              <span className="hero__word" style={{ '--i': 2 } as CSSProperties}>
+                <span>Engraved</span>
+              </span>
+            </h1>
+            <p className="hero__blurb">
+              A California studio cutting names, dates and designs into premium
+              hardwood. You approve a proof before anything is engraved.
+            </p>
+            <div className="hero__cta">
+              <Link className="btn btn--lg" href="/create">
+                Create Your Gift
+              </Link>
+              <Link className="btn btn--secondary btn--lg" href="/products">
+                Browse Products
+              </Link>
+            </div>
+            <p className="hero__assure">
+              Free personalization · Design preview included · Ships in 3–5 days
+            </p>
+          </div>
+
+          {heroPiece ? (
+            <div className="hero__piece">
+              <span className="hero__object">
+                <Image
+                  src={heroPiece.images[0]}
+                  alt={`${heroPiece.name}, engraved ${heroPiece.wood ?? 'hardwood'}`}
+                  width={imageSize(heroPiece.images[0]).w}
+                  height={imageSize(heroPiece.images[0]).h}
+                  sizes="(max-width: 900px) 72vw, 460px"
+                  priority
+                />
+              </span>
+              <p className="hero__caption">
+                <Link href={`/products/${heroPiece.slug}`}>
+                  {heroPiece.name} · Poplar · Hand-finished
+                </Link>
+              </p>
+            </div>
+          ) : null}
         </div>
-        <p className="hero__assure">
-          Free personalization · Design preview included · Ships in 3–5 days
-        </p>
       </section>
 
       <div className="wrap">

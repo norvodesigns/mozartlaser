@@ -395,42 +395,113 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
    HERO + SHELF
    ============================================================ */
 
+/* The first screen used to be type alone on bone, with the work below the
+   fold. The most striking thing the studio has is the objects, so one leads:
+   display type on the left, a single piece at real size on the right, sunk
+   into its own band. Text beside the photograph, never over it. */
+
 .hero {
-  text-align: center; padding-block: var(--space-9) var(--space-7);
-  display: flex; flex-direction: column; align-items: center; gap: var(--space-5);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--line);
+  /* Contains the object's entrance so nothing widens the page mid-animation. */
+  overflow: hidden;
+}
+.hero__in {
+  display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr);
+  gap: var(--space-9); align-items: center;
+  min-height: min(720px, calc(100svh - 132px));
+  padding-block: var(--space-9);
+}
+.hero__copy {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-5);
 }
 
-/* The hero settles line by line on load. It is CSS, not script, so it runs
-   with JS off and it cannot strand anything invisible: the animation fills
-   forwards and every line ends at its resting state. */
-.hero > * {
-  opacity: 0; transform: translateY(18px);
-  animation: hero-in 900ms var(--ease-expo) forwards;
+.hero__title {
+  font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(46px, 7.2vw, 104px); line-height: .95;
+  letter-spacing: -.022em; margin: 0; text-wrap: balance;
 }
-.hero > *:nth-child(1) { animation-delay:  40ms; }
-.hero > *:nth-child(2) { animation-delay: 120ms; }
-.hero > *:nth-child(3) { animation-delay: 220ms; }
-.hero > *:nth-child(4) { animation-delay: 320ms; }
-.hero > *:nth-child(5) { animation-delay: 420ms; }
-@keyframes hero-in { to { opacity: 1; transform: none; } }
-.hero h1 {
-  font-family: var(--font-display); font-weight: 300; font-size: 72px; line-height: 68px;
-  letter-spacing: -.015em; margin: 0; text-wrap: balance;
+/* Each word wipes up from behind its own line. The padding/margin pair gives
+   descenders room to sit below the baseline without the mask clipping them. */
+.hero__word {
+  display: inline-block; overflow: hidden; vertical-align: bottom;
+  padding-bottom: .14em; margin-bottom: -.14em;
 }
-.hero h1 em { font-style: italic; }
+.hero__word > span {
+  display: inline-block; transform: translateY(110%);
+  animation: hero-word 1150ms var(--ease-expo) forwards;
+  animation-delay: calc(140ms + var(--i) * 110ms);
+}
+.hero__word em { font-style: italic; }
+@keyframes hero-word { to { transform: none; } }
+
+/* Everything under the headline follows it up, on the same curve. */
+.hero__copy > :not(.hero__title) {
+  opacity: 0; transform: translateY(16px);
+  animation: hero-rise 900ms var(--ease-expo) forwards;
+}
+.hero__copy > .eyebrow { animation-delay: 80ms; }
+.hero__copy > .hero__blurb { animation-delay: 520ms; }
+.hero__copy > .hero__cta { animation-delay: 620ms; }
+.hero__copy > .hero__assure { animation-delay: 700ms; }
+@keyframes hero-rise { to { opacity: 1; transform: none; } }
+
 .hero__blurb {
   margin: 0; font-size: 18px; line-height: 30px; color: var(--ink-muted);
-  max-width: 58ch; text-wrap: pretty;
+  max-width: 46ch; text-wrap: pretty;
 }
-.hero__cta { display: flex; flex-wrap: wrap; gap: var(--space-4); justify-content: center; margin-top: var(--space-2); }
+.hero__cta { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-2); }
 .hero__assure {
   margin: 0; font-size: 12px; line-height: 18px; color: var(--ink-subtle);
   letter-spacing: .06em; text-transform: uppercase;
 }
 
-@media (max-width: 760px) {
-  .hero { padding-block: var(--space-8) var(--space-6); }
-  .hero h1 { font-size: 46px; line-height: 46px; }
+/* The piece rises into frame and its shadow spreads underneath as it lands.
+   Translation only — the system does not let product photography scale. */
+.hero__piece { display: flex; flex-direction: column; align-items: center; gap: var(--space-5); min-width: 0; }
+.hero__object {
+  position: relative; display: block; max-width: 460px; width: 100%;
+  opacity: 0; transform: translateY(44px);
+  animation: hero-rise 1400ms var(--ease-expo) forwards; animation-delay: 240ms;
+}
+.hero__object img {
+  display: block; position: relative; z-index: 1;
+  width: 100%; height: auto; max-height: 54svh; object-fit: contain;
+}
+.hero__object::after {
+  content: ""; position: absolute; left: 50%; bottom: -14px;
+  width: 0; height: 22px; transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, var(--ink) 26%, transparent) 0%,
+    color-mix(in srgb, var(--ink) 7%, transparent) 48%,
+    transparent 74%);
+  animation: hero-ground 1400ms var(--ease-expo) forwards; animation-delay: 320ms;
+}
+@keyframes hero-ground { to { width: 84%; } }
+
+.hero__caption {
+  margin: 0; font-size: 11px; line-height: 16px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-subtle); text-align: center;
+  opacity: 0; animation: hero-rise 900ms var(--ease-expo) forwards; animation-delay: 900ms;
+}
+.hero__caption a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--line-strong); padding-bottom: 2px; }
+.hero__caption a:hover { color: var(--ember); border-color: currentColor; }
+
+@media (max-width: 900px) {
+  /* Stacked, and the headline still leads — it is the sentence that explains
+     the object, so it cannot sit underneath it. */
+  .hero__in {
+    grid-template-columns: 1fr; gap: var(--space-6);
+    min-height: 0; padding-block: var(--space-6) var(--space-8);
+  }
+  /* Tighter above the fold so the piece is already showing when the page
+     lands, rather than sitting a scroll below the buttons. */
+  .hero__copy { gap: var(--space-4); }
+  .hero__blurb { max-width: 38ch; }
+  .hero__object { max-width: 330px; }
+  .hero__object img { max-height: 42svh; }
+  .hero__cta { width: 100%; }
   .hero__cta .btn { flex: 1 1 200px; }
 }
 
@@ -1318,8 +1389,11 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
   .shelf__item:active .shelf__object img { transform: none; }
 
   /* Entrances resolve to their resting state rather than their start state. */
-  .hero > *, .shelf__item, .menu__link, .menu__foot,
+  .hero__copy > :not(.hero__title), .hero__caption, .hero__object,
+  .shelf__item, .menu__link, .menu__foot,
   .reveal-armed [data-reveal]:not(.is-in) { opacity: 1; transform: none; }
+  .hero__word > span { transform: none; }
+  .hero__object::after { width: 84%; }
 }
 
 /* ============================================================
