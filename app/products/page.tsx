@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { categories, getProducts } from '@/lib/products';
+import { getCategories, getProducts } from '@/lib/products';
 import { ProductsBrowser } from './ProductsBrowser';
 
 export const metadata: Metadata = {
@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   alternates: { canonical: '/products' },
 };
 
-export default function ProductsPage({
+export default async function ProductsPage({
   searchParams,
 }: {
   searchParams: { category?: string };
 }) {
-  const products = getProducts();
+  const [products, categories] = await Promise.all([getProducts(), getCategories()]);
   const requested = searchParams.category;
   const initialCategory =
     requested && categories.includes(requested) ? requested : 'All';

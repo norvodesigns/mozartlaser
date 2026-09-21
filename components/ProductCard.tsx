@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { imageSize } from '@/lib/image-sizes';
 import { formatPrice, type Product } from '@/lib/products';
 
 /** Wood name plus one short fact — the card stays terse, the PDP carries the rest. */
@@ -43,10 +42,10 @@ export function ProductCard({
         ) : null}
         {hero ? (
           <Image
-            src={hero}
+            src={hero.src}
             alt={`${product.name}, engraved ${woodName}`}
-            width={imageSize(hero).w}
-            height={imageSize(hero).h}
+            width={hero.width}
+            height={hero.height}
             sizes="(max-width: 560px) 45vw, (max-width: 1000px) 30vw, 260px"
             priority={priority}
           />

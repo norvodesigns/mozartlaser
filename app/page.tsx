@@ -3,8 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ProductCard } from '@/components/ProductCard';
 import { Newsletter } from '@/components/Newsletter';
-import { imageSize } from '@/lib/image-sizes';
-import { getProduct, getProducts } from '@/lib/products';
+import { getProducts } from '@/lib/products';
 import { PROMISES } from '@/lib/site';
 
 /** The shelf: three real pieces stood on one line. Optical sizes, not equal ones. */
@@ -72,13 +71,14 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function HomePage() {
-  const products = getProducts();
-  const featured = FEATURED.map((slug) => getProduct(slug)).filter(
+export default async function HomePage() {
+  const products = await getProducts();
+  const bySlug = (slug: string) => products.find((p) => p.slug === slug);
+  const featured = FEATURED.map(bySlug).filter(
     (p): p is NonNullable<typeof p> => Boolean(p),
   );
-  const shelf = SHELF.map((entry) => ({ ...entry, product: getProduct(entry.slug) }));
-  const heroPiece = getProduct(HERO_SLUG);
+  const shelf = SHELF.map((entry) => ({ ...entry, product: bySlug(entry.slug) }));
+  const heroPiece = bySlug(HERO_SLUG);
 
   return (
     <>
@@ -118,14 +118,14 @@ export default function HomePage() {
             </p>
           </div>
 
-          {heroPiece ? (
+          {heroPiece && heroPiece.images[0] ? (
             <div className="hero__piece">
               <span className="hero__object">
                 <Image
-                  src={heroPiece.images[0]}
+                  src={heroPiece.images[0].src}
                   alt={`${heroPiece.name}, engraved ${heroPiece.wood ?? 'hardwood'}`}
-                  width={imageSize(heroPiece.images[0]).w}
-                  height={imageSize(heroPiece.images[0]).h}
+                  width={heroPiece.images[0].width}
+                  height={heroPiece.images[0].height}
                   sizes="(max-width: 900px) 72vw, 460px"
                   priority
                 />
@@ -145,7 +145,7 @@ export default function HomePage() {
             can lift off a ground shadow instead of floating flat. */}
         <div className="shelf">
           {shelf.map(({ product, variant, caption }, index) =>
-            product ? (
+            product && product.images[0] ? (
               <Link
                 key={product.slug}
                 href={`/products/${product.slug}`}
@@ -155,10 +155,10 @@ export default function HomePage() {
                 <figure>
                   <span className="shelf__object">
                     <Image
-                      src={product.images[0]}
+                      src={product.images[0].src}
                       alt={`${product.name}, engraved ${product.wood ?? 'hardwood'}`}
-                      width={imageSize(product.images[0]).w}
-                      height={imageSize(product.images[0]).h}
+                      width={product.images[0].width}
+                      height={product.images[0].height}
                       priority
                       sizes="(max-width: 420px) 30vw, (max-width: 860px) 26vw, 320px"
                     />

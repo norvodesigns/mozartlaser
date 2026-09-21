@@ -6,12 +6,17 @@ import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
 import { formatPrice, getProduct, getProducts, getRelated } from '@/lib/products';
 
-export function generateStaticParams() {
-  return getProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  const products = await getProducts();
+  return products.map((product) => ({ slug: product.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const product = getProduct(params.slug);
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const product = await getProduct(params.slug);
   if (!product) return { title: 'Product not found' };
 
   return {
@@ -22,17 +27,17 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     openGraph: {
       title: `${product.name} | Mozart Laser`,
       description: product.description,
-      images: product.images[0] ? [product.images[0]] : undefined,
+      images: product.images[0] ? [product.images[0].src] : undefined,
       type: 'website',
     },
   };
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const product = getProduct(params.slug);
+export default async function ProductPage({ params }: { params: { slug: string } }) {
+  const product = await getProduct(params.slug);
   if (!product) notFound();
 
-  const related = getRelated(product.slug, 3);
+  const related = await getRelated(product.slug, 3);
   const onSale = product.compareAtPrice !== null;
   const woodName = product.wood ?? product.material.split('·')[0]?.trim().toLowerCase();
 
@@ -41,7 +46,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     '@type': 'Product',
     name: product.name,
     description: product.description,
-    image: product.images.map((src) => `https://mozartlaser.com${src}`),
+    image: product.images.map((image) =>
+      image.src.startsWith('http') ? image.src : `https://mozartlaser.com${image.src}`,
+    ),
     material: product.material.split('·')[0]?.trim(),
     brand: { '@type': 'Brand', name: 'Mozart Laser' },
     offers: {

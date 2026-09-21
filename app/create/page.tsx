@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   alternates: { canonical: '/create' },
 };
 
-export default function CreatePage({
+export default async function CreatePage({
   searchParams,
 }: {
   searchParams: { product?: string; text?: string };
 }) {
-  const products = getProducts();
+  const products = await getProducts();
   const initialSlug =
     searchParams.product && products.some((p) => p.slug === searchParams.product)
       ? searchParams.product

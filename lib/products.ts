@@ -1,9 +1,19 @@
-// AUTO-DERIVED from the previous site's product pages, then hand-checked.
-// This is the single source of truth for the catalogue. When the booking
-// module takes over as the CMS, this module is what it replaces — keep the
-// Product shape stable and swap the body of getProducts().
+// The booking module's manager portal is the CMS: a business adds a product
+// there and it appears here through the public catalogue API. This module
+// fetches that API and falls back to the hand-checked static list below when
+// the API is unreachable or returns nothing, so the storefront never goes
+// blank because of a network hiccup or an empty catalogue.
+
+import { imageSize } from './image-sizes';
 
 export type Wood = 'acacia' | 'poplar' | 'pine';
+
+/** A single gallery image with the real dimensions Next/Image needs. */
+export type ProductImage = {
+  src: string;
+  width: number;
+  height: number;
+};
 
 export type Product = {
   /** URL segment: /products/<slug> */
@@ -24,12 +34,14 @@ export type Product = {
   description: string;
   bullets: string[];
   /** Ordered front → side → back → in-use → display. First is the hero shot. */
-  images: string[];
+  images: ProductImage[];
   /** Made to order through the custom flow rather than added to the cart. */
   custom: boolean;
 };
 
-export const products: Product[] = [
+type StaticProduct = Omit<Product, 'images'> & { images: string[] };
+
+const staticCatalogue: StaticProduct[] = [
   {
     "slug": "adventurers-bookmark",
     "name": "Adventurer's Bookmark",
@@ -538,26 +550,117 @@ export const products: Product[] = [
   }
 ];
 
-export const categories: string[] = [
-  'All',
-  ...Array.from(new Set(products.map((p) => p.category))).sort(),
-];
+let resolvedStatic: Product[] | null = null;
 
-export function getProducts(): Product[] {
-  return products;
+/** The hand-checked list, with each image resolved to real dimensions. */
+function getStaticProducts(): Product[] {
+  if (!resolvedStatic) {
+    resolvedStatic = staticCatalogue.map((product) => ({
+      ...product,
+      images: product.images.map((src) => {
+        const size = imageSize(src);
+        return { src, width: size.w, height: size.h };
+      }),
+    }));
+  }
+  return resolvedStatic;
 }
 
-export function getProduct(slug: string): Product | undefined {
-  return products.find((p) => p.slug === slug);
+/**
+ * The public catalogue API the manager portal's Supabase data feeds. A
+ * business slug other than mozartlaser can override this at deploy time.
+ */
+const CATALOGUE_API_URL =
+  process.env.NEXT_PUBLIC_CATALOGUE_API_URL ??
+  'https://dashboard.norvodesigns.com/api/public/v1/businesses/mozart-laser/products';
+
+type RemoteImage = {
+  url: string;
+  alt: string | null;
+  width: number | null;
+  height: number | null;
+};
+
+type RemoteProduct = {
+  slug: string;
+  name: string;
+  category: string | null;
+  description: string | null;
+  bullets: string[];
+  material: string | null;
+  wood: Wood | null;
+  price: number;
+  compareAtPrice: number | null;
+  personalizePrice: number | null;
+  custom: boolean;
+  stripePriceId: string | null;
+  images: RemoteImage[];
+};
+
+function fromRemote(row: RemoteProduct): Product {
+  return {
+    slug: row.slug,
+    name: row.name,
+    category: row.category ?? 'Other',
+    price: row.price,
+    compareAtPrice: row.compareAtPrice,
+    stripePriceId: row.stripePriceId,
+    // The public API doesn't carry a separate Stripe line-item name, so the
+    // product name is what a checkout session shows.
+    checkoutName: row.name,
+    wood: row.wood,
+    material: row.material ?? '',
+    description: row.description ?? '',
+    bullets: row.bullets ?? [],
+    images: (row.images ?? []).map((image) => ({
+      src: image.url,
+      width: image.width ?? 1000,
+      height: image.height ?? 1000,
+    })),
+    custom: row.custom,
+  };
 }
 
-export function getRelated(slug: string, limit = 4): Product[] {
-  const product = getProduct(slug);
+/**
+ * Fetches the live catalogue. Returns null on any failure — a bad response,
+ * a network error, or an empty catalogue — so the caller can fall back to
+ * the static list rather than showing an empty shop.
+ */
+async function fetchRemoteProducts(): Promise<Product[] | null> {
+  try {
+    const res = await fetch(CATALOGUE_API_URL, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { products?: RemoteProduct[] };
+    if (!Array.isArray(data.products) || data.products.length === 0) return null;
+    return data.products.map(fromRemote);
+  } catch {
+    return null;
+  }
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const remote = await fetchRemoteProducts();
+  return remote ?? getStaticProducts();
+}
+
+export async function getCategories(): Promise<string[]> {
+  const all = await getProducts();
+  return ['All', ...Array.from(new Set(all.map((p) => p.category))).sort()];
+}
+
+export async function getProduct(slug: string): Promise<Product | undefined> {
+  const all = await getProducts();
+  return all.find((p) => p.slug === slug);
+}
+
+export async function getRelated(slug: string, limit = 4): Promise<Product[]> {
+  const all = await getProducts();
+  const product = all.find((p) => p.slug === slug);
   if (!product) return [];
-  const sameCategory = products.filter(
+  const sameCategory = all.filter(
     (p) => p.slug !== slug && p.category === product.category,
   );
-  const rest = products.filter(
+  const rest = all.filter(
     (p) => p.slug !== slug && p.category !== product.category,
   );
   return [...sameCategory, ...rest].slice(0, limit);

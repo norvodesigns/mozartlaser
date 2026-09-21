@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useCart } from '@/components/CartProvider';
 import { imageSize } from '@/lib/image-sizes';
-import { formatPrice, type Product } from '@/lib/products';
+import { formatPrice, type Product, type ProductImage } from '@/lib/products';
 import {
   BULK_THRESHOLD,
   FONTS,
@@ -78,8 +78,12 @@ export function CreateFlow({
     () => (mode === 'personalize' ? (product?.name ?? '') : (blank?.name ?? '')),
     [mode, product, blank],
   );
-  const pieceImage =
-    mode === 'personalize' ? (product?.images[0] ?? '') : (blank?.image ?? '');
+  const pieceImage: ProductImage | null =
+    mode === 'personalize'
+      ? (product?.images[0] ?? null)
+      : blank
+        ? { src: blank.image, width: imageSize(blank.image).w, height: imageSize(blank.image).h }
+        : null;
 
   /**
    * One short word, shown in each face. The whole string truncates to the
@@ -261,7 +265,7 @@ export function CreateFlow({
                         key={item.slug}
                         pressed={slug === item.slug}
                         onClick={() => setSlug(item.slug)}
-                        image={item.images[0]}
+                        image={item.images[0] ?? null}
                         title={item.name}
                         note={formatPrice(
                           personalizePrices[item.slug] ?? PERSONALIZE_FALLBACK,
@@ -281,7 +285,11 @@ export function CreateFlow({
                         key={form.id}
                         pressed={blankId === form.id}
                         onClick={() => setBlankId(form.id)}
-                        image={form.image}
+                        image={{
+                          src: form.image,
+                          width: imageSize(form.image).w,
+                          height: imageSize(form.image).h,
+                        }}
                         title={form.name}
                         note={`${formatPrice(form.price)} each`}
                       />
@@ -567,11 +575,11 @@ export function CreateFlow({
             <span className="build__stage">
               {pieceImage ? (
                 <Image
-                  key={pieceImage}
-                  src={pieceImage}
+                  key={pieceImage.src}
+                  src={pieceImage.src}
                   alt={pieceName}
-                  width={imageSize(pieceImage).w}
-                  height={imageSize(pieceImage).h}
+                  width={pieceImage.width}
+                  height={pieceImage.height}
                   sizes="(max-width: 900px) 96px, 320px"
                 />
               ) : null}
@@ -704,7 +712,7 @@ function Tile({
 }: {
   pressed: boolean;
   onClick: () => void;
-  image: string;
+  image: ProductImage | null;
   title: string;
   note: string;
 }) {
@@ -713,10 +721,10 @@ function Tile({
       <span className="tile__media">
         {image ? (
           <Image
-            src={image}
+            src={image.src}
             alt=""
-            width={imageSize(image).w}
-            height={imageSize(image).h}
+            width={image.width}
+            height={image.height}
             sizes="140px"
           />
         ) : null}
