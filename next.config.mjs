@@ -224,6 +224,17 @@ const nextConfig = {
   reactStrictMode: true,
   images: {
     formats: ['image/webp'],
+    // Product photos uploaded through the booking module's manager portal
+    // live in Supabase Storage rather than this repo's /public, so Next's
+    // image optimizer needs the host allow-listed or it silently refuses to
+    // load them.
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'rfophffgbaebgusfxykl.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
   async redirects() {
     return legacyRedirects;

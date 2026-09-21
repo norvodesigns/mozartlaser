@@ -638,9 +638,23 @@ async function fetchRemoteProducts(): Promise<Product[] | null> {
   }
 }
 
+/**
+ * Live products lead, the hand-checked list fills the rest in. The catalogue
+ * is moving into the manager portal piece by piece — a business adding one
+ * new product there shouldn't wipe the other twenty-one off the storefront,
+ * so this merges rather than replaces, matching a remote product with a
+ * static one of the same slug (the remote row wins) and appending anything
+ * genuinely new. Only once the static list is fully retired does a slug
+ * collision stop being possible.
+ */
 export async function getProducts(): Promise<Product[]> {
   const remote = await fetchRemoteProducts();
-  return remote ?? getStaticProducts();
+  const fallback = getStaticProducts();
+  if (!remote) return fallback;
+
+  const remoteSlugs = new Set(remote.map((p) => p.slug));
+  const notYetMigrated = fallback.filter((p) => !remoteSlugs.has(p.slug));
+  return [...remote, ...notYetMigrated];
 }
 
 export async function getCategories(): Promise<string[]> {
