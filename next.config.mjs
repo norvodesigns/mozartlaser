@@ -234,6 +234,15 @@ const nextConfig = {
         hostname: 'rfophffgbaebgusfxykl.supabase.co',
         pathname: '/storage/v1/object/public/**',
       },
+      {
+        // The initial CMS seed points product_images.url at this site's own
+        // /public files (absolute, not relative), since seeding had neither
+        // a browser session nor a service-role key to upload to Storage
+        // with. Next treats an absolute self-referential URL as remote too.
+        protocol: 'https',
+        hostname: 'mozartlaser.com',
+        pathname: '/products/**',
+      },
     ],
   },
   async redirects() {
