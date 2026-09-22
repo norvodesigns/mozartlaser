@@ -742,7 +742,8 @@ function Tile({
             alt=""
             width={image.width}
             height={image.height}
-            sizes="140px"
+            sizes="(max-width: 560px) 96px, 116px"
+            quality={60}
           />
         ) : null}
       </span>
