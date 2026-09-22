@@ -25,7 +25,7 @@ export default function AboutPage() {
       </section>
 
       <div className="wrap">
-        <ul className="spec">
+        <ul className="spec" data-reveal>
           {PROMISES.map((promise) => (
             <li key={promise}>{promise}</li>
           ))}
@@ -34,13 +34,13 @@ export default function AboutPage() {
 
       <section className="wrap section">
         <div className="craft">
-          <div>
+          <div data-reveal>
             <p className="eyebrow">Who we are</p>
             <p className="craft__quote">
               A small Christian studio in <em>California</em>
             </p>
           </div>
-          <div>
+          <div data-reveal data-reveal-delay={90}>
             <p>
               Mozart Laser is a small Christian company based in California dedicated to
               bringing beauty into people&rsquo;s homes through laser engravings. We
@@ -125,7 +125,7 @@ export default function AboutPage() {
       </section>
 
       <section className="band">
-        <div className="wrap band__in">
+        <div className="wrap band__in" data-reveal>
           <p className="eyebrow">Get in touch</p>
           <h2>
             Let&rsquo;s make something <em>together</em>

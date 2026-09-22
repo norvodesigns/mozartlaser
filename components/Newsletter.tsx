@@ -32,7 +32,7 @@ export function Newsletter() {
   }
 
   return (
-    <section className="signup" aria-labelledby={`${id}-heading`}>
+    <section className="signup" aria-labelledby={`${id}-heading`} data-reveal>
       <div>
         <h2 id={`${id}-heading`}>Stay in the loop &amp; get 5% off</h2>
         <p>

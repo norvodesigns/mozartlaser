@@ -43,7 +43,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       </div>
 
       {post.hero ? (
-        <figure className="post-hero">
+        <figure className="post-hero" data-reveal>
           <Image
             src={post.hero.src}
             alt={post.hero.alt}
@@ -64,12 +64,17 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             return <p key={index} dangerouslySetInnerHTML={{ __html: block.html }} />;
           }
           if (block.type === 'quote') {
-            return <blockquote key={index}>{block.text}</blockquote>;
+            return (
+              <blockquote key={index} data-reveal>
+                {block.text}
+              </blockquote>
+            );
           }
           if (block.type === 'image') {
             return (
               <Image
                 key={index}
+                data-reveal
                 src={block.src}
                 alt={block.alt}
                 width={imageSize(block.src).w}
@@ -81,6 +86,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           return (
             <video
               key={index}
+              data-reveal
               src={block.src}
               controls
               muted
