@@ -2,9 +2,40 @@
 
 import { useCart } from './CartProvider';
 import { useOverlay } from './useOverlay';
+import { parseDetail } from '@/lib/custom-detail';
 import { formatPrice } from '@/lib/products';
 
 const EXIT_MS = 280;
+
+/**
+ * A made-to-order line's brief, shown so the customer can see their own words
+ * made it into the cart. It used to be one faint 12px paragraph in
+ * --ink-subtle — the colour CLAUDE.md reserves for things nobody needs in
+ * order to buy — which is the opposite of reassuring.
+ */
+function CustomDetail({ detail }: { detail: string }) {
+  const rows = parseDetail(detail);
+  return (
+    <div className="line__custom">
+      <p className="line__custom-head">
+        <span className="ml-badge ml-badge--quiet">CUSTOM</span>
+        <span>Saved with your order. We email a proof before we cut.</span>
+      </p>
+      {rows ? (
+        <dl className="line__spec">
+          {rows.map((row) => (
+            <div key={row.label} className="line__spec-row">
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="line__request">{detail}</p>
+      )}
+    </div>
+  );
+}
 
 export function CartDrawer() {
   const { items, isOpen, close, total, setQuantity, remove, checkout, checkoutState } =
@@ -54,7 +85,7 @@ export function CartDrawer() {
                   <span className="line__price">
                     {formatPrice(line.price * line.quantity)}
                   </span>
-                  {line.detail ? <p className="line__detail">{line.detail}</p> : null}
+                  {line.detail ? <CustomDetail detail={line.detail} /> : null}
                   <div className="line__controls">
                     <span className="qty">
                       <button

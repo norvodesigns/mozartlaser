@@ -972,7 +972,21 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 .lines li:first-child { padding-top: 0; }
 .line__name { color: var(--ink); }
 .line__price { font-variant-numeric: tabular-nums; }
-.line__detail { grid-column: 1 / -1; font-size: 12px; line-height: 18px; color: var(--ink-subtle); white-space: pre-line; margin: 0; }
+/* A made-to-order line's brief. Set off by a hairline rule rather than a
+   filled panel so the quiet badge (itself on --surface-sunken) still reads. */
+.line__custom {
+  grid-column: 1 / -1; display: flex; flex-direction: column; gap: var(--space-3);
+  padding-left: var(--space-3); border-left: 1px solid var(--line-strong);
+}
+.line__custom-head {
+  margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3);
+  font-size: 12px; line-height: 18px; color: var(--ink-muted);
+}
+.line__spec { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-4); font-size: 14px; line-height: 20px; }
+.line__spec-row { display: contents; }
+.line__spec dt { color: var(--ink-muted); }
+.line__spec dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.line__request { margin: 0; font-size: 14px; line-height: 20px; color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; }
 .line__controls { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--space-3); }
 
 .qty { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); }
