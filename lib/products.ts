@@ -639,21 +639,31 @@ async function fetchRemoteProducts(): Promise<Product[] | null> {
 }
 
 /**
+ * Every slug the CMS now owns. The public API only ever returns active
+ * products, so "absent from the live remote list" is ambiguous between "not
+ * migrated yet" and "migrated, but switched off" — and treating the second
+ * case as the first is exactly what resurrected a deactivated product from
+ * the static list instead of removing it. All 22 static products were
+ * ported into the CMS in one pass, so this is simply every static slug;
+ * whichever of them the live fetch doesn't return is off, not missing.
+ */
+const migratedSlugs = new Set(staticCatalogue.map((p) => p.slug));
+
+/**
  * Live products lead, the hand-checked list fills the rest in. The catalogue
  * is moving into the manager portal piece by piece — a business adding one
  * new product there shouldn't wipe the other twenty-one off the storefront,
  * so this merges rather than replaces, matching a remote product with a
  * static one of the same slug (the remote row wins) and appending anything
- * genuinely new. Only once the static list is fully retired does a slug
- * collision stop being possible.
+ * genuinely new. A slug the CMS already owns never falls back to its static
+ * copy, active or not — only a slug the CMS has never heard of does.
  */
 export async function getProducts(): Promise<Product[]> {
   const remote = await fetchRemoteProducts();
   const fallback = getStaticProducts();
   if (!remote) return fallback;
 
-  const remoteSlugs = new Set(remote.map((p) => p.slug));
-  const notYetMigrated = fallback.filter((p) => !remoteSlugs.has(p.slug));
+  const notYetMigrated = fallback.filter((p) => !migratedSlugs.has(p.slug));
   return [...remote, ...notYetMigrated];
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { ClearCart } from './ClearCart';
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 export default function SuccessPage() {
   return (
     <section className="wrap status">
-      <ClearCart />
+      <Suspense fallback={null}>
+        <ClearCart />
+      </Suspense>
       <div className="head head--center">
         <p className="eyebrow">Order confirmed</p>
         <h1>

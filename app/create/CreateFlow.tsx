@@ -39,8 +39,12 @@ export function CreateFlow({
   const fileRef = useRef<HTMLInputElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
-  const [step, setStep] = useState(0);
-  const [reached, setReached] = useState(0);
+  // Typing engraving text on a product page and pressing Personalize means
+  // the piece is already chosen, so start on the engraving step with the
+  // text in place. "The piece" stays done and clickable to change it.
+  const startStep = initialSlug && initialText.trim() ? 1 : 0;
+  const [step, setStep] = useState(startStep);
+  const [reached, setReached] = useState(startStep);
   const [mode, setMode] = useState<Mode>('personalize');
   const [slug, setSlug] = useState(initialSlug ?? products[0]?.slug ?? '');
   const [blankId, setBlankId] = useState(blankForms[0]?.id ?? '');
@@ -97,8 +101,12 @@ export function CreateFlow({
 
   // Moving between steps replaces the whole panel. Without this you land
   // halfway down the next step on a phone, looking at a field with no heading.
+  // Only on a change — arriving straight on step 2 keeps the page intro in
+  // view rather than jumping past it on load.
+  const lastStep = useRef(step);
   useEffect(() => {
-    if (step === 0) return;
+    if (step === lastStep.current) return;
+    lastStep.current = step;
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [step]);
 
@@ -183,6 +191,15 @@ export function CreateFlow({
       priceId: null,
       detail,
     });
+
+    // This flow is the only place that collects a name/email — the plain
+    // cart never does. Stashed here so the success page can attach them to
+    // the order it submits once the cart reaches checkout; see ClearCart.
+    try {
+      window.localStorage.setItem('lastOrderContact', JSON.stringify({ name, email }));
+    } catch {
+      /* Storage can be unavailable; the order still submits without contact info. */
+    }
 
     setSubmitted(true);
   }

@@ -49,8 +49,12 @@ const CHECKOUT_ENDPOINT =
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-/** Reads the cart the old site left in localStorage, in its old shape. */
-function readStoredCart(): CartItem[] {
+/**
+ * Reads the cart the old site left in localStorage, in its old shape. Also
+ * used by the order-success page to see what was just bought before
+ * ClearCart wipes it — see lib/orders.ts.
+ */
+export function readStoredCart(): CartItem[] {
   if (typeof window === 'undefined') return [];
   try {
     const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]');
