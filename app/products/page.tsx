@@ -21,7 +21,7 @@ export default async function ProductsPage({
 
   return (
     <section className="wrap section">
-      <div className="head">
+      <div className="head" data-reveal>
         <p className="eyebrow">The shop</p>
         <h1>
           Gallery of <em>Crafted Pieces</em>

@@ -1350,14 +1350,17 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
    first paint and any link preview show the real page.
    ============================================================ */
 
-/* A longer travel on a heavier curve. The scale is small enough that you
-   read it as the section arriving from depth rather than as a zoom. */
+/* Pure rise, same curve the hero's own entrance uses — no scale, both because
+   a product card is product photography (translate only, no exceptions) and
+   because a flat 1.5% zoom read as noise rather than motion. 32px gives the
+   travel room to actually be seen mid-flight rather than resolving off in
+   the bottom margin before the section is in view. */
 [data-reveal] {
   transition: opacity var(--dur-panel) var(--ease-out-soft),
               transform var(--dur-panel) var(--ease-expo);
 }
 .reveal-armed [data-reveal]:not(.is-in) {
-  opacity: 0; transform: translateY(22px) scale(.985);
+  opacity: 0; transform: translateY(32px);
 }
 
 /* ============================================================

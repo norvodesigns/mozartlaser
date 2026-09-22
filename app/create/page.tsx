@@ -23,7 +23,7 @@ export default async function CreatePage({
   return (
     <section className="section">
       <div className="wrap">
-        <div className="head">
+        <div className="head" data-reveal>
           <p className="eyebrow">Free personalization</p>
           <h1>
             Tell us what you <em>want</em>
