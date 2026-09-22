@@ -184,6 +184,15 @@ export function CreateFlow({
       detail,
     });
 
+    // This flow is the only place that collects a name/email — the plain
+    // cart never does. Stashed here so the success page can attach them to
+    // the order it submits once the cart reaches checkout; see ClearCart.
+    try {
+      window.localStorage.setItem('lastOrderContact', JSON.stringify({ name, email }));
+    } catch {
+      /* Storage can be unavailable; the order still submits without contact info. */
+    }
+
     setSubmitted(true);
   }
 
