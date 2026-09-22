@@ -1,0 +1,126 @@
+/* Mozart Laser — component stylesheet.
+   Class-based, no framework. Load after tokens.css and use these classes
+   directly in HTML. Every value here is a token. */
+
+.ml-btn {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--ember);
+  color: var(--on-ember);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 180ms ease-out, color 180ms ease-out, border-color 180ms ease-out;
+}
+.ml-btn:hover { background: var(--ember-strong); }
+.ml-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+.ml-btn--secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+.ml-btn--secondary:hover { background: var(--surface-sunken); border-color: var(--ink); }
+
+.ml-btn--ghost {
+  background: transparent;
+  color: var(--ember);
+  border-color: transparent;
+  padding-inline: var(--space-2);
+}
+.ml-btn--ghost:hover { background: var(--ember-soft); color: var(--ember-strong); }
+
+.ml-btn--sm { padding: var(--space-2) var(--space-3); font-size: 13px; line-height: 16px; }
+.ml-btn--lg { padding: var(--space-4) var(--space-7); }
+.ml-btn[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+.ml-field { display: flex; flex-direction: column; gap: var(--space-2); font-family: var(--font-sans); }
+.ml-field__label {
+  font-size: 13px; line-height: 16px; font-weight: 500; letter-spacing: 0.06em; color: var(--ink);
+}
+.ml-field__input {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 26px;
+  color: var(--ink);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  width: 100%;
+  box-sizing: border-box;
+}
+.ml-field__input::placeholder { color: var(--ink-subtle); }
+.ml-field__input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; border-color: var(--ink); }
+.ml-field__hint { font-size: 14px; line-height: 22px; color: var(--ink-subtle); }
+.ml-field__error { font-size: 14px; line-height: 22px; color: var(--danger); }
+.ml-field--invalid .ml-field__input { border-color: var(--danger); }
+
+.ml-card {
+  display: flex; flex-direction: column;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: box-shadow 200ms ease-out;
+  text-decoration: none;
+  color: inherit;
+}
+.ml-card:hover { box-shadow: var(--shadow-raise); }
+.ml-card:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.ml-card__media { aspect-ratio: 4 / 3; background: var(--surface-sunken); border-bottom: 1px solid var(--line); }
+.ml-card__body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+.ml-card__title { font-family: var(--font-display); font-size: 24px; line-height: 30px; font-weight: 400; color: var(--ink); margin: 0; }
+.ml-card__meta { font-family: var(--font-sans); font-size: 12px; line-height: 18px; color: var(--ink-subtle); display: flex; align-items: center; gap: var(--space-2); }
+.ml-card__price { font-family: var(--font-sans); font-size: 16px; line-height: 26px; color: var(--ink); margin-top: var(--space-2); }
+
+.ml-swatch { width: 10px; height: 10px; border-radius: var(--radius-sm); display: inline-block; flex: none; }
+.ml-swatch--acacia { background: var(--acacia); }
+.ml-swatch--poplar { background: var(--poplar); }
+.ml-swatch--pine { background: var(--pine); }
+
+.ml-badge {
+  font-family: var(--font-sans);
+  font-size: 11px; line-height: 14px; font-weight: 500; letter-spacing: 0.18em;
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--ember-soft);
+  color: var(--ember-strong);
+}
+.ml-badge--quiet { background: var(--surface-sunken); color: var(--ink-muted); }
+.ml-badge--success { background: transparent; color: var(--success); padding-inline: 0; }
+.ml-badge--danger { background: transparent; color: var(--danger); padding-inline: 0; }
+
+.ml-quote { display: flex; flex-direction: column; gap: var(--space-5); max-width: 620px; }
+.ml-quote__text {
+  font-family: var(--font-display); font-size: 32px; line-height: 38px; font-weight: 400;
+  color: var(--ink); margin: 0;
+}
+.ml-quote__attr { font-family: var(--font-sans); font-size: 14px; line-height: 22px; color: var(--ink-subtle); }
+
+.ml-section-head { display: flex; flex-direction: column; gap: var(--space-4); max-width: 640px; }
+.ml-section-head__eyebrow {
+  font-family: var(--font-sans); font-size: 11px; line-height: 14px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ember);
+}
+.ml-section-head__title {
+  font-family: var(--font-display); font-size: 44px; line-height: 48px; font-weight: 300;
+  letter-spacing: -0.005em; color: var(--ink); margin: 0;
+}
+.ml-section-head__title em { font-style: italic; }
+.ml-section-head__lede { font-family: var(--font-sans); font-size: 18px; line-height: 30px; color: var(--ink-muted); margin: 0; }
+
+.ml-trust { display: flex; flex-wrap: wrap; gap: var(--space-8); border-block: 1px solid var(--line); padding-block: var(--space-6); }
+.ml-trust__item { display: flex; flex-direction: column; gap: var(--space-1); }
+.ml-trust__term { font-family: var(--font-sans); font-size: 13px; line-height: 16px; font-weight: 500; letter-spacing: 0.06em; color: var(--ink); }
+.ml-trust__detail { font-family: var(--font-sans); font-size: 14px; line-height: 22px; color: var(--ink-subtle); }

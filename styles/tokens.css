@@ -1,0 +1,95 @@
+/* Mozart Laser — design tokens + button layer, generated from the design system.
+   Don't hand-edit values here. Change them in the design system, then regenerate.
+
+   Two lines differ from the generated file, both because this site runs on Next:
+   --font-display / --font-sans point at the next/font variables (same families,
+   same fallbacks, self-hosted instead of fetched from Google), and --logo points
+   at the wordmarks under /brand. Nothing else is changed. */
+
+  :root {
+    --surface: #faf7f2; --surface-raised: #fffefb; --surface-sunken: #f1eade; --surface-inverse: #1e1913;
+    --ink: #231d16; --ink-muted: #574c3e; --ink-subtle: #6f6353; --ink-inverse: #f8f4ed;
+    --line: #e5dccd; --line-strong: #857761;
+    --ember: #7a4a22; --ember-strong: #5c3616; --ember-soft: #f2e6d7; --on-ember: #fdfaf6;
+    --acacia: #a97648; --poplar: #e9e1ce; --pine: #dcc69c;
+    --success: #3d6b4d; --danger: #9e3626; --focus-ring: #3f2a14;
+    --shadow-raise: 0 1px 2px rgba(35,29,22,.06), 0 6px 16px rgba(35,29,22,.05);
+    --shadow-overlay: 0 12px 40px rgba(35,29,22,.14);
+    --grain-a: rgba(35,29,22,.06); --grain-b: rgba(35,29,22,.025);
+    --logo: url("/brand/wordmark-ink.png");
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+    --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px; --space-10:128px;
+    --radius-sm:2px; --radius-md:4px; --radius-lg:8px; --radius-pill:999px;
+    --font-display: var(--font-cormorant),"Iowan Old Style",Georgia,serif;
+    --font-sans: var(--font-work-sans),ui-sans-serif,system-ui,sans-serif;
+    --burn: rgba(28,20,12,.86);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --surface:#16130f; --surface-raised:#1f1b15; --surface-sunken:#100d0a; --surface-inverse:#f4efe6;
+      --ink:#f2ece2; --ink-muted:#bdb1a0; --ink-subtle:#9b8f7e; --ink-inverse:#1e1913;
+      --line:#332c23; --line-strong:#807260;
+      --ember:#d9a273; --ember-strong:#ecc6a1; --ember-soft:#2b2119; --on-ember:#241a10;
+      --acacia:#c08f5f; --poplar:#cfc4a8; --pine:#e0c9a0;
+      --success:#86b294; --danger:#e2907c; --focus-ring:#e8c49a;
+      --shadow-raise: 0 1px 2px rgba(0,0,0,.5), 0 6px 16px rgba(0,0,0,.4);
+      --shadow-overlay: 0 12px 40px rgba(0,0,0,.6);
+      --grain-a: rgba(0,0,0,.22); --grain-b: rgba(255,255,255,.035);
+      --logo: url("/brand/wordmark-light.png");
+    }
+  }
+  :root[data-theme="dark"] {
+    --surface:#16130f; --surface-raised:#1f1b15; --surface-sunken:#100d0a; --surface-inverse:#f4efe6;
+    --ink:#f2ece2; --ink-muted:#bdb1a0; --ink-subtle:#9b8f7e; --ink-inverse:#1e1913;
+    --line:#332c23; --line-strong:#807260;
+    --ember:#d9a273; --ember-strong:#ecc6a1; --ember-soft:#2b2119; --on-ember:#241a10;
+    --acacia:#c08f5f; --poplar:#cfc4a8; --pine:#e0c9a0;
+    --success:#86b294; --danger:#e2907c; --focus-ring:#e8c49a;
+    --shadow-raise: 0 1px 2px rgba(0,0,0,.5), 0 6px 16px rgba(0,0,0,.4);
+    --shadow-overlay: 0 12px 40px rgba(0,0,0,.6);
+    --grain-a: rgba(0,0,0,.22); --grain-b: rgba(255,255,255,.035);
+    --logo: url("/brand/wordmark-light.png");
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--surface); color: var(--ink);
+    font-family: var(--font-sans); font-size: 16px; line-height: 26px;
+    -webkit-font-smoothing: antialiased; }
+  :focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  img { max-width: 100%; }
+
+  .wrap { max-width: 1160px; margin-inline: auto; padding-inline: var(--space-5); }
+  .rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+  .eyebrow { font-size: 11px; line-height: 14px; font-weight: 500; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--ember); margin: 0; }
+  .lede { font-size: 18px; line-height: 30px; color: var(--ink-muted); margin: 0; max-width: 48ch; }
+  .caption { font-size: 12px; line-height: 18px; color: var(--ink-subtle); }
+
+  /* Buttons — inverse fill sweep on hover */
+  .btn { position: relative; z-index: 0; overflow: hidden; isolation: isolate;
+    font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 500;
+    letter-spacing: .02em; display: inline-flex; align-items: center; justify-content: center;
+    gap: var(--space-2); padding: var(--space-3) var(--space-5);
+    border: 1px solid var(--ember); border-radius: var(--radius-md);
+    background: var(--ember); color: var(--on-ember); text-decoration: none; cursor: pointer;
+    transition: color 260ms ease-out, border-color 260ms ease-out; }
+  .btn::before { content: ""; position: absolute; inset: 0; z-index: -1;
+    background: var(--on-ember); transform: scaleX(0); transform-origin: left center;
+    transition: transform 320ms cubic-bezier(.22,.7,.28,1); }
+  .btn:hover::before, .btn:focus-visible::before { transform: scaleX(1); }
+  .btn:hover, .btn:focus-visible { color: var(--ember); }
+
+  .btn--secondary { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn--secondary::before { background: var(--ink); }
+  .btn--secondary:hover, .btn--secondary:focus-visible { color: var(--surface); border-color: var(--ink); }
+
+  .btn--inverse { background: var(--ink-inverse); color: var(--surface-inverse); border-color: var(--ink-inverse); }
+  .btn--inverse::before { background: var(--surface-inverse); }
+  .btn--inverse:hover, .btn--inverse:focus-visible { color: var(--ink-inverse); }
+
+  .btn--lg { padding: var(--space-4) var(--space-7); }
+  .btn--sm { padding: var(--space-2) var(--space-4); font-size: 13px; line-height: 16px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn, .btn::before { transition-duration: 1ms; }
+  }
