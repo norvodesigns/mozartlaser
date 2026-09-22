@@ -628,7 +628,7 @@ function fromRemote(row: RemoteProduct): Product {
  */
 async function fetchRemoteProducts(): Promise<Product[] | null> {
   try {
-    const res = await fetch(CATALOGUE_API_URL, { next: { revalidate: 60 } });
+    const res = await fetch(CATALOGUE_API_URL, { next: { revalidate: 60, tags: ['products'] } });
     if (!res.ok) return null;
     const data = (await res.json()) as { products?: RemoteProduct[] };
     if (!Array.isArray(data.products) || data.products.length === 0) return null;
