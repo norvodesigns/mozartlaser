@@ -36,7 +36,7 @@ var live = false;
 var bail = function () { d.classList.remove('rv'); };
 setTimeout(function () { if (!live) bail(); }, 4000);
 
-var STEP = 90;          /* stagger between neighbours in a batch; --stagger overrides */
+var STEP = 160;         /* stagger between neighbours in a batch; --stagger overrides */
 var MAX_STEPS = 6;      /* how many steps a cascade runs to */
 var FONT_WAIT = 1100;   /* longest the first screen waits on the web fonts */
 var IMAGE_WAIT = 1400;  /* longest an element waits on its photograph, past its slot */
@@ -65,7 +65,7 @@ var show = function (el, delay) {
      button swapped in as someone types — should just be there, not replay
      the entrance on the container's old delay. */
   if (el.getAttribute('data-reveal') === 'stagger')
-    setTimeout(function () { el.setAttribute('data-reveal-done', ''); }, delay + 2400);
+    setTimeout(function () { el.setAttribute('data-reveal-done', ''); }, delay + 4000);
 };
 
 var imageReady = function (img, cap) {

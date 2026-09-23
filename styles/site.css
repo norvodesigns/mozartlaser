@@ -35,10 +35,13 @@
   --dur-base:  320ms;
   --dur-slow:  460ms;
   --dur-panel: 640ms;
-  /* Something arriving on the page rather than responding to a hand. On the
-     expo curve nearly all the travel is in the first half; the rest is a
-     couple of pixels of settle, so longer buys nothing you can see. */
-  --dur-entrance: 860ms;
+  /* Something arriving on the page rather than responding to a hand, and
+     deliberately unhurried. Entrances travel on the out-soft curve, not expo:
+     expo put four fifths of the movement into the first 200ms, which read as
+     things snapping into place. --dur-reveal is the mask that uncovers them,
+     timed to pass at about reading pace, and the fade on small furniture. */
+  --dur-entrance: 1500ms;
+  --dur-reveal: 1100ms;
 
   --lift-sm: 2px;
   --lift-md: 6px;
@@ -47,8 +50,8 @@
 
   /* Entrances. --stagger is also read by the engine in lib/motion.ts, so a
      batch of neighbours and the children of one block keep the same beat. */
-  --stagger: 90ms;
-  --stagger-child: 80ms;
+  --stagger: 160ms;
+  --stagger-child: 130ms;
   --rv-y: 24px;
   --rv-y-child: 16px;
   --rv-y-object: 44px;
@@ -1473,23 +1476,23 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 .rv [data-reveal="frame"]:not([data-revealed]) { translate: 0 var(--rv-y); }
 .rv [data-reveal="object"]:not([data-revealed]) { translate: 0 var(--rv-y-object); }
 
-/* The mask runs on the out-soft curve so the pass is something you see;
-   the travel settles on expo underneath it. */
+/* The mask passes a little quicker than the piece travels, so copy is
+   readable while it is still settling. */
 .rv [data-reveal="rise"][data-revealed] {
-  animation: rv-sweep var(--dur-panel) var(--ease-out-soft) var(--rv-delay) backwards,
-             rv-rise var(--dur-entrance) var(--ease-expo) var(--rv-delay) backwards;
+  animation: rv-sweep var(--dur-reveal) var(--ease-out-soft) var(--rv-delay) backwards,
+             rv-rise var(--dur-entrance) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 .rv [data-reveal="frame"][data-revealed] {
-  animation: rv-emerge var(--dur-panel) var(--ease-out-soft) var(--rv-delay) backwards,
-             rv-rise var(--dur-entrance) var(--ease-expo) var(--rv-delay) backwards;
+  animation: rv-emerge var(--dur-reveal) var(--ease-out-soft) var(--rv-delay) backwards,
+             rv-rise var(--dur-entrance) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 .rv [data-reveal="object"][data-revealed] {
   --rv-y: var(--rv-y-object);
-  animation: rv-emerge var(--dur-panel) var(--ease-out-soft) var(--rv-delay) backwards,
-             rv-rise var(--dur-entrance) var(--ease-expo) var(--rv-delay) backwards;
+  animation: rv-emerge var(--dur-reveal) var(--ease-out-soft) var(--rv-delay) backwards,
+             rv-rise var(--dur-entrance) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 .rv [data-reveal="fade"][data-revealed] {
-  animation: rv-fade var(--dur-slow) var(--ease-out-soft) var(--rv-delay) backwards;
+  animation: rv-fade var(--dur-reveal) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 
 /* stagger. The child kinds sit in :where() so every rule here weighs the
@@ -1499,15 +1502,15 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 .rv [data-reveal="stagger"][data-revealed] > * {
   --rv-y: var(--rv-y-child);
   --rv-at: calc(var(--rv-delay) + var(--rv-n, 0) * var(--stagger-child));
-  animation: rv-fade var(--dur-base) var(--ease-out-soft) var(--rv-at) backwards,
-             rv-rise var(--dur-entrance) var(--ease-expo) var(--rv-at) backwards;
+  animation: rv-fade var(--dur-reveal) var(--ease-out-soft) var(--rv-at) backwards,
+             rv-rise var(--dur-entrance) var(--ease-out-soft) var(--rv-at) backwards;
 }
 .rv [data-reveal="stagger"][data-revealed] > :where(p, ul, ol, dl, blockquote, figure, div) {
-  animation: rv-sweep var(--dur-panel) var(--ease-out-soft) var(--rv-at) backwards,
-             rv-rise var(--dur-entrance) var(--ease-expo) var(--rv-at) backwards;
+  animation: rv-sweep var(--dur-reveal) var(--ease-out-soft) var(--rv-at) backwards,
+             rv-rise var(--dur-entrance) var(--ease-out-soft) var(--rv-at) backwards;
 }
 .rv [data-reveal="stagger"][data-revealed] > :where(h1, h2, h3, .craft__quote) {
-  animation: rv-wipe var(--dur-entrance) var(--ease-expo) var(--rv-at) backwards;
+  animation: rv-wipe var(--dur-entrance) var(--ease-out-soft) var(--rv-at) backwards;
 }
 .rv [data-reveal="stagger"][data-reveal-done] > * { animation: none; }
 [data-reveal="stagger"] > :nth-child(2) { --rv-n: 1; }
@@ -1521,16 +1524,16 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 /* wipe · mask · line */
 .rv [data-reveal="wipe"]:not([data-revealed]) { translate: 0 100%; }
 .rv [data-reveal="wipe"][data-revealed] {
-  animation: rv-wipe var(--dur-entrance) var(--ease-expo) var(--rv-delay) backwards;
+  animation: rv-wipe var(--dur-entrance) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 .rv [data-reveal="mask"]:not([data-revealed]) > * { translate: 0 110%; }
 .rv [data-reveal="mask"][data-revealed] > * {
-  animation: rv-mask calc(var(--dur-entrance) * 1.1) var(--ease-expo) var(--rv-delay) backwards;
+  animation: rv-mask calc(var(--dur-entrance) * 1.1) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 [data-reveal="line"] { transform-origin: left center; }
 .rv [data-reveal="line"]:not([data-revealed]) { scale: 0 1; }
 .rv [data-reveal="line"][data-revealed] {
-  animation: rv-line calc(var(--dur-entrance) * 1.3) var(--ease-expo) var(--rv-delay) backwards;
+  animation: rv-line calc(var(--dur-entrance) * 1.3) var(--ease-out-soft) var(--rv-delay) backwards;
 }
 
 /* The pieces land on their shadows. The shadow spreads a beat after the
@@ -1539,7 +1542,7 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 .rv .shelf__item:not([data-revealed]) .shelf__object::after { width: 0; opacity: 0; }
 .rv .hero__object[data-revealed]::after,
 .rv .shelf__item[data-revealed] .shelf__object::after {
-  animation: rv-ground var(--dur-entrance) var(--ease-expo)
+  animation: rv-ground var(--dur-entrance) var(--ease-out-soft)
              calc(var(--rv-delay) + var(--stagger)) backwards;
 }
 
@@ -1550,7 +1553,7 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 .rv .pdp__gallery[data-revealed] .pdp__stage img {
   --rv-y: var(--rv-y-child);
   --rv-at: calc(var(--rv-delay) + var(--stagger));
-  animation: rv-rise var(--dur-entrance) var(--ease-expo) var(--rv-at) backwards;
+  animation: rv-rise var(--dur-entrance) var(--ease-out-soft) var(--rv-at) backwards;
 }
 /* The frame has arrived and its photograph is still on the way: keep the
    photograph back so it comes up once decoded, on the spot, instead of
@@ -1564,14 +1567,14 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
 }
 .rv [data-rv-photo="in"][data-revealed] :is(.card__media, .pdp__stage) img {
   --rv-y: var(--rv-y-child);
-  animation: rv-emerge var(--dur-panel) var(--ease-out-soft) backwards,
-             rv-rise var(--dur-entrance) var(--ease-expo) backwards;
+  animation: rv-emerge var(--dur-reveal) var(--ease-out-soft) backwards,
+             rv-rise var(--dur-entrance) var(--ease-out-soft) backwards;
 }
 /* Editorial photography fills its frame, so it settles in scale rather than
    travel, which would open a gap at the foot of the frame. */
 .rv [data-rv-photo="in"][data-revealed] .post-item__media img {
-  animation: rv-emerge var(--dur-panel) var(--ease-out-soft) backwards,
-             rv-settle var(--dur-entrance) var(--ease-expo) backwards;
+  animation: rv-emerge var(--dur-reveal) var(--ease-out-soft) backwards,
+             rv-settle var(--dur-entrance) var(--ease-out-soft) backwards;
 }
 /* Picking another view settles the new one in on the spot. Someone has
    already interacted, so the page's paint timing is settled and a quick

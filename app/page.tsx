@@ -89,27 +89,27 @@ export default async function HomePage() {
       <section className="hero">
         <div className="wrap hero__in">
           <div className="hero__copy">
-            <p className="eyebrow" {...reveal('rise', 40)}>
+            <p className="eyebrow" {...reveal('rise', 60)}>
               Custom laser engraving
             </p>
             <h1 className="hero__title">
-              <span className="hero__word" {...reveal('mask', 90)}>
+              <span className="hero__word" {...reveal('mask', 160)}>
                 <span>Precision</span>
               </span>{' '}
-              <span className="hero__word" {...reveal('mask', 180)}>
+              <span className="hero__word" {...reveal('mask', 320)}>
                 <span>
                   <em>Laser</em>
                 </span>
               </span>{' '}
-              <span className="hero__word" {...reveal('mask', 270)}>
+              <span className="hero__word" {...reveal('mask', 480)}>
                 <span>Engraved</span>
               </span>
             </h1>
-            <p className="hero__blurb" {...reveal('rise', 380)}>
+            <p className="hero__blurb" {...reveal('rise', 700)}>
               A California studio cutting names, dates and designs into premium
               hardwood. You approve a proof before anything is engraved.
             </p>
-            <div className="hero__cta" {...reveal('stagger', 460)}>
+            <div className="hero__cta" {...reveal('stagger', 880)}>
               <Link className="btn btn--lg" href="/create">
                 Create Your Gift
               </Link>
@@ -117,14 +117,14 @@ export default async function HomePage() {
                 Browse Products
               </Link>
             </div>
-            <p className="hero__assure" {...reveal('fade', 600)}>
+            <p className="hero__assure" {...reveal('fade', 1120)}>
               Free personalization · Design preview included · Ships in 3–5 days
             </p>
           </div>
 
           {heroPiece && heroPiece.images[0] ? (
             <div className="hero__piece">
-              <span className="hero__object" {...reveal('object', 160)}>
+              <span className="hero__object" {...reveal('object', 300)}>
                 <Image
                   src={heroPiece.images[0].src}
                   alt={`${heroPiece.name}, engraved ${heroPiece.wood ?? 'hardwood'}`}
@@ -134,7 +134,7 @@ export default async function HomePage() {
                   priority
                 />
               </span>
-              <p className="hero__caption" {...reveal('fade', 720)}>
+              <p className="hero__caption" {...reveal('fade', 1300)}>
                 <Link href={`/products/${heroPiece.slug}`}>
                   {heroPiece.name} · Poplar · Hand-finished
                 </Link>
@@ -158,7 +158,7 @@ export default async function HomePage() {
                 key={product.slug}
                 href={`/products/${product.slug}`}
                 className={`shelf__item shelf--${variant}`}
-                {...reveal('object', 660 + index * 100)}
+                {...reveal('object', 1200 + index * 180)}
               >
                 <figure>
                   <span className="shelf__object">

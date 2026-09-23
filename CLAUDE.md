@@ -44,9 +44,13 @@ See the motion rule below.
   than that on the rebuild. The rule for this repo is the motion layer at the top of
   `styles/site.css`: four easings (`--ease-out-soft`, `--ease-in-soft`, `--ease-spring`,
   `--ease-expo`), five interaction durations (`--dur-press` … `--dur-panel`), and for
-  things arriving on the page `--dur-entrance`, `--stagger`/`--stagger-child` and the
-  `--rv-y*` distances. Use those; don't write a raw `cubic-bezier` or a bare millisecond
-  value into a rule.
+  things arriving on the page `--dur-entrance`, `--dur-reveal`, `--stagger`/`--stagger-child`
+  and the `--rv-y*` distances. Use those; don't write a raw `cubic-bezier` or a bare
+  millisecond value into a rule.
+  - **Entrances are unhurried.** The first pass (860ms on the expo curve) read as
+    stressful: expo lands most of the movement in the first 200ms, which is a snap.
+    Entrances travel on `--ease-out-soft` over `--dur-entrance`. Hover and press keep
+    the short interaction durations — slow arrivals, quick responses.
   - **Entrances and scroll reveals go through `reveal()`** (`lib/reveal.ts`) — never a
     CSS animation that starts on its own, and never a React effect. A CSS animation's
     clock starts before a slow phone paints its first frame, so it's over before anyone
