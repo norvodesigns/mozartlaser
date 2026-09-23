@@ -64,7 +64,9 @@ See the motion rule below.
     painted until an opacity-from-0 entrance has fully finished, which cost every page
     about a second of LCP. Copy, headings, frames and photographs are uncovered with a
     `clip-path` mask plus movement; `fade` and faded stagger children are for small
-    furniture only (buttons, links, chips, captions).
+    furniture (buttons, links, chips, captions). The one exception is the product
+    card: a grid of cards each moving and unmasking was dizzying, so cards only
+    fade (`reveal('fade')`), photo included. Keep it that way.
   - Reveals animate `translate`, `scale`, `clip-path` and `opacity`; hover and press own
     `transform` and `box-shadow`. Keep it that way so the two never fight.
   - Hover displacement goes inside `@media (hover: hover) and (pointer: fine)`, with

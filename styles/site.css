@@ -1423,8 +1423,8 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
    Kinds:
      rise     copy and plain blocks, swept in as they rise —
               the default
-     frame    a card, the gallery, a photograph: uncovered from
-              its base while its piece settles inside
+     frame    the gallery, a photograph: uncovered from its base
+              while its piece settles inside
      object   a piece rising onto its ground shadow, uncovered the
               same way; product photography, so translation only
      stagger  the block stays put and its children cascade, each
@@ -1434,7 +1434,11 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
               the hero's word mask, for a whole heading
      mask     the hero's per-word version (markup carries the mask)
      line     a hairline drawn from the left
-     fade     opacity only, for small things
+     fade     opacity only: small things, and the product cards.
+              A grid of cards each sliding and unmasking was too
+              much movement at once, so they only fade — the one
+              large thing allowed to, at a small cost in paint
+              timing on the product grid.
    ============================================================ */
 
 @keyframes rv-fade   { from { opacity: 0; } }
@@ -1546,10 +1550,9 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
              calc(var(--rv-delay) + var(--stagger)) backwards;
 }
 
-/* A frame comes up and its piece settles into the well a beat behind it,
-   travelling further than the frame does, so the two part slightly. The
-   frame's mask is what uncovers it; the piece only moves. */
-.rv .card[data-revealed] .card__media img,
+/* The gallery comes up and its piece settles into the well a beat behind
+   it, travelling further than the frame does, so the two part slightly.
+   The frame's mask is what uncovers it; the piece only moves. */
 .rv .pdp__gallery[data-revealed] .pdp__stage img {
   --rv-y: var(--rv-y-child);
   --rv-at: calc(var(--rv-delay) + var(--stagger));
@@ -1560,12 +1563,15 @@ a.mark:active { transform: scale(var(--squish)); transition-duration: var(--dur-
    painting in row by row. The engine flips the block from wait to in.
    Held with opacity, not a mask: Chrome won't start a lazy image loading
    while a clip-path hides it, so a masked photo would wait for a load that
-   never begins. Nothing fades — the switch is instant and the emerge below
-   covers it from its first frame. */
+   never begins. In the gallery the switch is instant and the emerge below
+   covers it from its first frame; on a card the photo simply fades in. */
 .rv [data-rv-photo="wait"] :is(.card__media, .pdp__stage, .post-item__media) img {
   opacity: 0 !important; animation: none !important;
 }
-.rv [data-rv-photo="in"][data-revealed] :is(.card__media, .pdp__stage) img {
+.rv [data-rv-photo="in"][data-revealed] .card__media img {
+  animation: rv-fade var(--dur-reveal) var(--ease-out-soft) backwards;
+}
+.rv [data-rv-photo="in"][data-revealed] .pdp__stage img {
   --rv-y: var(--rv-y-child);
   animation: rv-emerge var(--dur-reveal) var(--ease-out-soft) backwards,
              rv-rise var(--dur-entrance) var(--ease-out-soft) backwards;

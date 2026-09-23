@@ -48,7 +48,7 @@ export function ProductCard({
   const woodName = product.wood ?? product.material.split('·')[0]?.trim().toLowerCase();
 
   return (
-    <Link href={`/products/${product.slug}`} className="card" {...reveal('frame')}>
+    <Link href={`/products/${product.slug}`} className="card" {...reveal('fade')}>
       <div
         className="card__media"
         // The contact shadow sits under the piece, not under the well, so it
