@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { imageSize } from '@/lib/image-sizes';
 import { getPost, posts } from '@/lib/posts';
+import { reveal } from '@/lib/reveal';
 
 export function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
@@ -32,7 +33,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
   return (
     <article className="wrap section">
-      <div className="head">
+      <div className="head" {...reveal('stagger')}>
         <p className="eyebrow">{[post.tag, post.date].filter(Boolean).join(' · ')}</p>
         <h1
           className="post-item__title"
@@ -43,7 +44,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       </div>
 
       {post.hero ? (
-        <figure className="post-hero" data-reveal>
+        <figure className="post-hero" {...reveal('frame')}>
           <Image
             src={post.hero.src}
             alt={post.hero.alt}
@@ -65,7 +66,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           }
           if (block.type === 'quote') {
             return (
-              <blockquote key={index} data-reveal>
+              <blockquote key={index} {...reveal()}>
                 {block.text}
               </blockquote>
             );
@@ -74,7 +75,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             return (
               <Image
                 key={index}
-                data-reveal
+                {...reveal('frame')}
                 src={block.src}
                 alt={block.alt}
                 width={imageSize(block.src).w}
@@ -86,7 +87,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           return (
             <video
               key={index}
-              data-reveal
+              {...reveal('frame')}
               src={block.src}
               controls
               muted
@@ -99,7 +100,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         })}
       </div>
 
-      <div className="row" style={{ marginTop: 'var(--space-8)' }}>
+      <div className="row" style={{ marginTop: 'var(--space-8)' }} {...reveal('stagger')}>
         <Link href="/blog" className="btn btn--secondary">
           All posts
         </Link>

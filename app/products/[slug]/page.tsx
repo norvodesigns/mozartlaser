@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ProductBuy } from '@/components/ProductBuy';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductGallery } from '@/components/ProductGallery';
+import { reveal } from '@/lib/reveal';
 import { formatPrice, getProduct, getProducts, getRelated } from '@/lib/products';
 
 export async function generateStaticParams() {
@@ -76,7 +77,10 @@ export default async function ProductPage({ params }: { params: { slug: string }
             wood={woodName}
           />
 
-          <div className="pdp__info">
+          {/* The piece rises onto its photograph; the facts about it follow
+              down the column. The whole cascade is done inside ~600ms, so
+              nobody waits on it to reach the button. */}
+          <div className="pdp__info" {...reveal('stagger')}>
             <div className="stack" style={{ gap: 'var(--space-3)' }}>
               <p className="eyebrow">
                 <Link href={`/products?category=${encodeURIComponent(product.category)}`}>
@@ -131,16 +135,16 @@ export default async function ProductPage({ params }: { params: { slug: string }
 
       {related.length > 0 ? (
         <section className="wrap section">
-          <hr className="rule" style={{ marginBottom: 'var(--space-8)' }} />
-          <div className="head head--sub">
+          <hr className="rule" style={{ marginBottom: 'var(--space-8)' }} {...reveal('line')} />
+          <div className="head head--sub" {...reveal('stagger')}>
             <p className="eyebrow">More from the shop</p>
             <h2>
               You might also <em>like</em>
             </h2>
           </div>
           <div className="grid grid--three">
-            {related.map((item, index) => (
-              <ProductCard key={item.slug} product={item} revealDelay={index * 60} />
+            {related.map((item) => (
+              <ProductCard key={item.slug} product={item} />
             ))}
           </div>
         </section>

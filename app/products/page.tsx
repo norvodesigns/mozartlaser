@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { toCardProduct } from '@/components/ProductCard';
+import { reveal } from '@/lib/reveal';
 import { getCategories, getProducts } from '@/lib/products';
 import { ProductsBrowser } from './ProductsBrowser';
 
@@ -9,19 +11,16 @@ export const metadata: Metadata = {
   alternates: { canonical: '/products' },
 };
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: { category?: string };
-}) {
+/* Static, not rendered per request: reading `searchParams` here made every
+   visit a cold serverless render, and made the page impossible to prefetch —
+   the header's link to it fetched nothing, so every click waited on the
+   server. The ?category= a PDP links with is read on the client instead. */
+export default async function ProductsPage() {
   const [products, categories] = await Promise.all([getProducts(), getCategories()]);
-  const requested = searchParams.category;
-  const initialCategory =
-    requested && categories.includes(requested) ? requested : 'All';
 
   return (
     <section className="wrap section">
-      <div className="head" data-reveal>
+      <div className="head" {...reveal('stagger')}>
         <p className="eyebrow">The shop</p>
         <h1>
           Gallery of <em>Crafted Pieces</em>
@@ -32,11 +31,7 @@ export default async function ProductsPage({
         </p>
       </div>
 
-      <ProductsBrowser
-        products={products}
-        categories={categories}
-        initialCategory={initialCategory}
-      />
+      <ProductsBrowser products={products.map(toCardProduct)} categories={categories} />
     </section>
   );
 }

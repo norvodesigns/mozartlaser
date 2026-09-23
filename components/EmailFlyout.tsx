@@ -5,15 +5,23 @@ import { useEffect, useId, useState } from 'react';
 import { MESSAGES, isValidEmail, subscribe } from '@/lib/email';
 
 const DISMISS_KEY = 'mozartlaser_flyout_dismissed';
-const DELAY_MS = 4500;
+/** Never sooner than this after arriving on a page. */
+const MIN_MS = 9000;
+/** Read this far down the page — the offer lands on interest, not arrival. */
+const DEPTH = 0.55;
+/** Or stayed this long without getting that far. */
+const DWELL_MS = 45000;
+/** How long the exit plays before it unmounts; matches --dur-base. */
+const EXIT_MS = 320;
 
 /**
- * Pages where a timed overlay is an interruption rather than an offer. The
- * create flow keeps the piece, the running brief and the price in a panel the
- * flyout lands directly on top of, and the order pages are the worst possible
- * moment to ask for an email address.
+ * Pages where an overlay is an interruption rather than an offer. The create
+ * flow keeps the piece, the running brief and the price in a panel the flyout
+ * lands directly on top of; a product page is where someone is deciding; and
+ * the order pages are the worst possible moment to ask for an email address.
  */
-const QUIET_PATHS = ['/create', '/order'];
+const QUIET = (path: string) =>
+  path.startsWith('/create') || path.startsWith('/order') || path.startsWith('/products/');
 
 type State = 'idle' | 'sending' | 'ok' | 'error';
 
@@ -30,12 +38,16 @@ export function EmailFlyout() {
   const id = useId();
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [email, setEmail] = useState('');
   const [state, setState] = useState<State>('idle');
   const [message, setMessage] = useState('');
 
+  // It used to arrive 4.5s after landing — on a phone, square over the hero's
+  // two buttons. Now it waits for a sign of interest: most of the way down the
+  // page, or a long stay, and never in the first seconds of a visit.
   useEffect(() => {
-    if (QUIET_PATHS.some((path) => pathname.startsWith(path))) {
+    if (QUIET(pathname)) {
       setVisible(false);
       return;
     }
@@ -46,8 +58,32 @@ export function EmailFlyout() {
       /* Storage can be unavailable; the flyout simply shows. */
     }
     if (dismissed) return;
-    const timer = window.setTimeout(() => setVisible(true), DELAY_MS);
-    return () => window.clearTimeout(timer);
+
+    const arrived = Date.now();
+    let frame = 0;
+    const open = () => {
+      setVisible(true);
+      cleanup();
+    };
+    const check = () => {
+      frame = 0;
+      if (Date.now() - arrived < MIN_MS) return;
+      const root = document.documentElement;
+      if ((window.scrollY + window.innerHeight) / root.scrollHeight >= DEPTH) open();
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(check);
+    };
+    const dwell = window.setTimeout(open, DWELL_MS);
+    const late = window.setTimeout(check, MIN_MS);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    function cleanup() {
+      window.clearTimeout(dwell);
+      window.clearTimeout(late);
+      window.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    }
+    return cleanup;
   }, [pathname]);
 
   useEffect(() => {
@@ -60,7 +96,11 @@ export function EmailFlyout() {
   });
 
   function dismiss() {
-    setVisible(false);
+    setClosing(true);
+    window.setTimeout(() => {
+      setVisible(false);
+      setClosing(false);
+    }, EXIT_MS);
     try {
       window.sessionStorage.setItem(DISMISS_KEY, '1');
     } catch {
@@ -93,6 +133,7 @@ export function EmailFlyout() {
   return (
     <aside
       className="flyout"
+      data-closing={closing || undefined}
       role="dialog"
       aria-labelledby={`${id}-heading`}
       aria-label="Email signup"

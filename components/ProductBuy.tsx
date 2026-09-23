@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useId, useState } from 'react';
 import { useCart } from './CartProvider';
 import { PERSONALIZE_FALLBACK, personalizePrices } from '@/lib/custom';
-import { formatPrice, type Product } from '@/lib/products';
+import { formatPrice } from '@/lib/format';
+import type { Product } from '@/lib/products';
 
 const MAX_ENGRAVING = 60;
 

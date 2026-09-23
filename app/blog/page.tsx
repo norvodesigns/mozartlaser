@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { imageSize } from '@/lib/image-sizes';
 import { posts } from '@/lib/posts';
+import { reveal } from '@/lib/reveal';
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <section className="wrap section">
-      <div className="head">
+      <div className="head" {...reveal('stagger')}>
         <p className="eyebrow">From the studio</p>
         <h1>
           The <em>Blog</em>
@@ -26,14 +27,8 @@ export default function BlogPage() {
       </div>
 
       <div className="posts">
-        {posts.map((post, index) => (
-          <Link
-            key={post.slug}
-            href={`/blog/${post.slug}`}
-            className="post-item"
-            data-reveal
-            data-reveal-delay={(index % 2) * 60}
-          >
+        {posts.map((post) => (
+          <Link key={post.slug} href={`/blog/${post.slug}`} className="post-item" {...reveal()}>
             <div className="post-item__media">
               {post.hero ? (
                 <Image

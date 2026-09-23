@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { ClearCart } from './ClearCart';
+import { reveal } from '@/lib/reveal';
 
 export const metadata: Metadata = {
   title: 'Order confirmed',
@@ -15,7 +16,7 @@ export default function SuccessPage() {
       <Suspense fallback={null}>
         <ClearCart />
       </Suspense>
-      <div className="head head--center">
+      <div className="head head--center" {...reveal('stagger')}>
         <p className="eyebrow">Order confirmed</p>
         <h1>
           Thank you — we are <em>on</em> it
@@ -26,7 +27,7 @@ export default function SuccessPage() {
           before anything is cut.
         </p>
       </div>
-      <div className="row" style={{ justifyContent: 'center' }}>
+      <div className="row" style={{ justifyContent: 'center' }} {...reveal('stagger')}>
         <Link href="/products" className="btn">
           Keep browsing
         </Link>

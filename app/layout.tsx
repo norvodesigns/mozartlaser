@@ -5,9 +5,9 @@ import { Analytics } from '@vercel/analytics/next';
 import { CartProvider } from '@/components/CartProvider';
 import { CartDrawer } from '@/components/CartDrawer';
 import { EmailFlyout } from '@/components/EmailFlyout';
-import { Reveal } from '@/components/Reveal';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { MOTION_SCRIPT } from '@/lib/motion';
 
 import '@/styles/tokens.css';
 import '@/styles/components.css';
@@ -77,7 +77,26 @@ const ORGANIZATION_SCHEMA = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${workSans.variable}`}>
+    // The motion engine adds a class here before React hydrates.
+    <html lang="en" className={`${cormorant.variable} ${workSans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: MOTION_SCRIPT }} />
+        {/* The wordmark is a CSS background, so the browser only finds it
+            once the stylesheet has been applied — late enough that the
+            masthead painted with a half-drawn logo on a slow connection. */}
+        <link
+          rel="preload"
+          as="image"
+          href="/brand/wordmark-ink.png"
+          media="(prefers-color-scheme: light)"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/brand/wordmark-light.png"
+          media="(prefers-color-scheme: dark)"
+        />
+      </head>
       <body>
         <script
           type="application/ld+json"
@@ -95,7 +114,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SiteFooter />
           <CartDrawer />
           <EmailFlyout />
-          <Reveal />
         </CartProvider>
         <Analytics />
         <SpeedInsights />

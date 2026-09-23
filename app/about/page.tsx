@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CONTACT_EMAIL, PROMISES } from '@/lib/site';
+import { reveal } from '@/lib/reveal';
 
 export const metadata: Metadata = {
   title: 'About',
@@ -13,7 +14,7 @@ export default function AboutPage() {
   return (
     <>
       <section className="wrap section">
-        <div className="head">
+        <div className="head" {...reveal('stagger')}>
           <p className="eyebrow">Mozart Laser · California</p>
           <h1>
             Every mark the laser makes is a mark that <em>lasts</em>
@@ -25,7 +26,7 @@ export default function AboutPage() {
       </section>
 
       <div className="wrap">
-        <ul className="spec" data-reveal>
+        <ul className="spec" {...reveal('stagger')}>
           {PROMISES.map((promise) => (
             <li key={promise}>{promise}</li>
           ))}
@@ -34,13 +35,13 @@ export default function AboutPage() {
 
       <section className="wrap section">
         <div className="craft">
-          <div data-reveal>
+          <div {...reveal('stagger')}>
             <p className="eyebrow">Who we are</p>
             <p className="craft__quote">
               A small Christian studio in <em>California</em>
             </p>
           </div>
-          <div data-reveal data-reveal-delay={90}>
+          <div {...reveal('stagger')}>
             <p>
               Mozart Laser is a small Christian company based in California dedicated to
               bringing beauty into people&rsquo;s homes through laser engravings. We
@@ -72,17 +73,17 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <hr className="rule" />
+      <hr className="rule" {...reveal('line')} />
 
       <section className="wrap section">
-        <div className="head">
+        <div className="head" {...reveal('stagger')}>
           <p className="eyebrow">What we hold to</p>
           <h2>
             Three things we do not <em>bend</em> on
           </h2>
         </div>
         <div className="steps">
-          <div className="step" data-reveal>
+          <div className="step" {...reveal()}>
             <span className="step__n">01</span>
             <h3>Craftsmanship</h3>
             <p>
@@ -91,7 +92,7 @@ export default function AboutPage() {
               hand.
             </p>
           </div>
-          <div className="step" data-reveal data-reveal-delay={60}>
+          <div className="step" {...reveal()}>
             <span className="step__n">02</span>
             <h3>Meaning</h3>
             <p>
@@ -99,7 +100,7 @@ export default function AboutPage() {
               moments. Things worth keeping. Things worth giving.
             </p>
           </div>
-          <div className="step" data-reveal data-reveal-delay={120}>
+          <div className="step" {...reveal()}>
             <span className="step__n">03</span>
             <h3>Excellence</h3>
             <p>
@@ -110,11 +111,11 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <hr className="rule" />
+      <hr className="rule" {...reveal('line')} />
 
       <section className="wrap section">
         <div className="quotes quotes--lead">
-          <figure data-reveal>
+          <figure {...reveal()}>
             <blockquote>
               “Our mission is to create engraved pieces that inspire faith, spark
               conversation, and stand the test of time.”
@@ -125,7 +126,7 @@ export default function AboutPage() {
       </section>
 
       <section className="band">
-        <div className="wrap band__in" data-reveal>
+        <div className="wrap band__in" {...reveal('stagger')}>
           <p className="eyebrow">Get in touch</p>
           <h2>
             Let&rsquo;s make something <em>together</em>

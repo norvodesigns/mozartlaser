@@ -1,10 +1,12 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useCart } from '@/components/CartProvider';
-import { imageSize } from '@/lib/image-sizes';
-import { formatPrice, type Product, type ProductImage } from '@/lib/products';
+import { reveal } from '@/lib/reveal';
+import { formatPrice } from '@/lib/format';
+import type { Product, ProductImage } from '@/lib/products';
 import {
   BULK_THRESHOLD,
   FONTS,
@@ -24,32 +26,41 @@ type Errors = Partial<Record<string, string>>;
 
 const STEPS = ['The piece', 'The engraving', 'Your details'];
 
-export function CreateFlow({
-  products,
-  initialSlug,
-  initialText,
-}: {
-  products: Product[];
-  initialSlug: string | null;
-  /** Carried over when somebody typed engraving text on a product page. */
-  initialText: string;
-}) {
+/** All the picker draws. The page sends only this, not the catalogue. */
+export type PickerProduct = Pick<Product, 'slug' | 'name' | 'images'>;
+
+type HandOffValue = { slug: string | null; text: string };
+
+/**
+ * A product page hands over ?product=&text= when somebody types engraving
+ * text and presses Personalize. Read here, inside its own Suspense boundary,
+ * so the page itself can be static and prefetched. A layout effect, so
+ * arriving from that button commits straight onto step two before the first
+ * paint rather than flashing step one.
+ */
+function HandOff({ onHandOff }: { onHandOff: (value: HandOffValue) => void }) {
+  const params = useSearchParams();
+  const slug = params.get('product');
+  const text = (params.get('text') ?? '').slice(0, 60);
+  useLayoutEffect(() => {
+    if (slug || text) onHandOff({ slug, text });
+  }, [slug, text, onHandOff]);
+  return null;
+}
+
+export function CreateFlow({ products }: { products: PickerProduct[] }) {
   const { add } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
-  // Typing engraving text on a product page and pressing Personalize means
-  // the piece is already chosen, so start on the engraving step with the
-  // text in place. "The piece" stays done and clickable to change it.
-  const startStep = initialSlug && initialText.trim() ? 1 : 0;
-  const [step, setStep] = useState(startStep);
-  const [reached, setReached] = useState(startStep);
+  const [step, setStep] = useState(0);
+  const [reached, setReached] = useState(0);
   const [mode, setMode] = useState<Mode>('personalize');
-  const [slug, setSlug] = useState(initialSlug ?? products[0]?.slug ?? '');
+  const [slug, setSlug] = useState(products[0]?.slug ?? '');
   const [blankId, setBlankId] = useState(blankForms[0]?.id ?? '');
 
-  const [text, setText] = useState(initialText);
+  const [text, setText] = useState('');
   const [font, setFont] = useState('');
   const [fontSize, setFontSize] = useState('');
   const [placement, setPlacement] = useState('');
@@ -86,7 +97,7 @@ export function CreateFlow({
     mode === 'personalize'
       ? (product?.images[0] ?? null)
       : blank
-        ? { src: blank.image, width: imageSize(blank.image).w, height: imageSize(blank.image).h }
+        ? { src: blank.image, width: blank.width, height: blank.height }
         : null;
 
   /**
@@ -109,6 +120,24 @@ export function CreateFlow({
     lastStep.current = step;
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [step]);
+
+  // Typing engraving text on a product page and pressing Personalize means
+  // the piece is already chosen, so start on the engraving step with the
+  // text in place. "The piece" stays done and clickable to change it. The
+  // ref moves with it, so arriving there doesn't scroll past the page intro.
+  const handOff = useCallback(
+    ({ slug: requested, text: carried }: HandOffValue) => {
+      const known = requested && products.some((p) => p.slug === requested) ? requested : null;
+      if (known) setSlug(known);
+      if (carried) setText(carried);
+      if (known && carried.trim()) {
+        lastStep.current = 1;
+        setStep(1);
+        setReached(1);
+      }
+    },
+    [products],
+  );
 
   function validateStep(index: number): boolean {
     const next: Errors = {};
@@ -206,7 +235,7 @@ export function CreateFlow({
 
   if (submitted) {
     return (
-      <div className="done">
+      <div className="done" {...reveal('stagger')}>
         <p className="eyebrow">Order started</p>
         <h2>
           We have your <em>details</em>
@@ -228,9 +257,12 @@ export function CreateFlow({
 
   return (
     <>
+      <Suspense fallback={null}>
+        <HandOff onHandOff={handOff} />
+      </Suspense>
       <div className="build" ref={topRef}>
         <div className="build__main">
-          <ol className="progress">
+          <ol className="progress" {...reveal('fade')}>
             {STEPS.map((label, index) => (
               <li
                 key={label}
@@ -253,7 +285,7 @@ export function CreateFlow({
           </ol>
 
           {step === 0 ? (
-            <div className="panel">
+            <div className="panel" {...reveal()}>
               <Field label="Where are we starting?">
                 <div className="picks picks--wide">
                   <Pick
@@ -304,8 +336,8 @@ export function CreateFlow({
                         onClick={() => setBlankId(form.id)}
                         image={{
                           src: form.image,
-                          width: imageSize(form.image).w,
-                          height: imageSize(form.image).h,
+                          width: form.width,
+                          height: form.height,
                         }}
                         title={form.name}
                         note={`${formatPrice(form.price)} each`}
@@ -318,7 +350,7 @@ export function CreateFlow({
           ) : null}
 
           {step === 1 ? (
-            <div className="panel">
+            <div className="panel" {...reveal()}>
               {mode === 'personalize' ? (
                 <>
                   <div
@@ -480,7 +512,7 @@ export function CreateFlow({
           ) : null}
 
           {step === 2 ? (
-            <div className="panel">
+            <div className="panel" {...reveal()}>
               <Field
                 label="How many"
                 hint={
@@ -587,7 +619,7 @@ export function CreateFlow({
         {/* The piece, the running spec and the price, visible the whole way
             through. Filling in a brief for something you cannot see was the
             main reason this flow felt like paperwork. */}
-        <aside className="build__aside" aria-label="Your piece so far">
+        <aside className="build__aside" aria-label="Your piece so far" {...reveal()}>
           <div className="build__head">
             <span className="build__stage">
               {pieceImage ? (

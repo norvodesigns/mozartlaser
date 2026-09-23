@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { reveal } from '@/lib/reveal';
 import { getProducts } from '@/lib/products';
 import { CreateFlow } from './CreateFlow';
 
@@ -9,21 +10,22 @@ export const metadata: Metadata = {
   alternates: { canonical: '/create' },
 };
 
-export default async function CreatePage({
-  searchParams,
-}: {
-  searchParams: { product?: string; text?: string };
-}) {
-  const products = await getProducts();
-  const initialSlug =
-    searchParams.product && products.some((p) => p.slug === searchParams.product)
-      ? searchParams.product
-      : null;
+/* Static, so it's served from the edge and prefetched from every link to it.
+   The ?product=&text= a product page hands over is read in the flow itself.
+   Only the three fields the picker draws are sent to the client — the full
+   catalogue with every description and bullet list made this the heaviest
+   page on the site. */
+export default async function CreatePage() {
+  const products = (await getProducts()).map((product) => ({
+    slug: product.slug,
+    name: product.name,
+    images: product.images.slice(0, 1),
+  }));
 
   return (
     <section className="section">
       <div className="wrap">
-        <div className="head" data-reveal>
+        <div className="head" {...reveal('stagger')}>
           <p className="eyebrow">Free personalization</p>
           <h1>
             Tell us what you <em>want</em>
@@ -34,11 +36,7 @@ export default async function CreatePage({
           </p>
         </div>
 
-        <CreateFlow
-          products={products}
-          initialSlug={initialSlug}
-          initialText={(searchParams.text ?? "").slice(0, 60)}
-        />
+        <CreateFlow products={products} />
       </div>
     </section>
   );

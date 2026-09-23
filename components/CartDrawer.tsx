@@ -3,7 +3,7 @@
 import { useCart } from './CartProvider';
 import { useOverlay } from './useOverlay';
 import { parseDetail } from '@/lib/custom-detail';
-import { formatPrice } from '@/lib/products';
+import { formatPrice } from '@/lib/format';
 
 const EXIT_MS = 280;
 

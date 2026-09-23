@@ -1,9 +1,10 @@
 import Link from 'next/link';
+import { reveal } from '@/lib/reveal';
 
 export default function NotFound() {
   return (
     <section className="wrap status">
-      <div className="head head--center">
+      <div className="head head--center" {...reveal('stagger')}>
         <p className="eyebrow">Page not found</p>
         <h1>
           This one is not <em>here</em>
@@ -13,7 +14,7 @@ export default function NotFound() {
           the shop.
         </p>
       </div>
-      <div className="row" style={{ justifyContent: 'center' }}>
+      <div className="row" style={{ justifyContent: 'center' }} {...reveal('stagger')}>
         <Link href="/products" className="btn">
           Browse products
         </Link>

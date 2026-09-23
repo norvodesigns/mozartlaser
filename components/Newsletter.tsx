@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { MESSAGES, isValidEmail, subscribe } from '@/lib/email';
+import { reveal } from '@/lib/reveal';
 
 type State = 'idle' | 'sending' | 'ok' | 'error';
 
@@ -32,7 +33,7 @@ export function Newsletter() {
   }
 
   return (
-    <section className="signup" aria-labelledby={`${id}-heading`} data-reveal>
+    <section className="signup" aria-labelledby={`${id}-heading`} {...reveal('stagger')}>
       <div>
         <h2 id={`${id}-heading`}>Stay in the loop &amp; get 5% off</h2>
         <p>

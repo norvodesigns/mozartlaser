@@ -223,7 +223,15 @@ const legacyRedirects = [
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    formats: ['image/webp'],
+    // AVIF first: the catalogue is cut-out photography on a transparent
+    // ground, where AVIF's alpha is a fraction of WebP's, and on a phone the
+    // hero's piece waits on its photograph. WebP stays for browsers without it.
+    formats: ['image/avif', 'image/webp'],
+    // Every optimized size is a cold encode the first time it's asked for,
+    // and with the 60s default a quiet storefront kept paying for it. The
+    // portal uploads to a fresh timestamped path and never overwrites, so a
+    // URL's pixels never change and a month at the edge is safe.
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     // Product photos uploaded through the booking module's manager portal
     // live in Supabase Storage rather than this repo's /public, so Next's
     // image optimizer needs the host allow-listed or it silently refuses to

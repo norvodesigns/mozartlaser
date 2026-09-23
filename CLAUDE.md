@@ -43,8 +43,28 @@ See the motion rule below.
   160–240ms, ease-out") describes the old static site and Caleb has asked for more
   than that on the rebuild. The rule for this repo is the motion layer at the top of
   `styles/site.css`: four easings (`--ease-out-soft`, `--ease-in-soft`, `--ease-spring`,
-  `--ease-expo`) and five durations (`--dur-press` … `--dur-panel`). Use those; don't
-  write a raw `cubic-bezier` or a bare millisecond value into a rule.
+  `--ease-expo`), five interaction durations (`--dur-press` … `--dur-panel`), and for
+  things arriving on the page `--dur-entrance`, `--stagger`/`--stagger-child` and the
+  `--rv-y*` distances. Use those; don't write a raw `cubic-bezier` or a bare millisecond
+  value into a rule.
+  - **Entrances and scroll reveals go through `reveal()`** (`lib/reveal.ts`) — never a
+    CSS animation that starts on its own, and never a React effect. A CSS animation's
+    clock starts before a slow phone paints its first frame, so it's over before anyone
+    sees it; an effect runs at hydration, after content is already on screen. The
+    engine in `lib/motion.ts` runs inline in `<head>`: it arms before the first paint,
+    starts the first screen once the fonts are in, and holds anything that *is* its
+    photograph until the photograph decodes. Pick a kind (`rise`, `frame`, `object`,
+    `stagger`, `wipe`, `mask`, `line`, `fade`); the visuals live under REVEAL in
+    `site.css`. Pin a delay only for first-screen choreography (the hero).
+  - **Nothing large fades in from transparent.** Chrome doesn't count an element as
+    painted until an opacity-from-0 entrance has fully finished, which cost every page
+    about a second of LCP. Copy, headings, frames and photographs are uncovered with a
+    `clip-path` mask plus movement; `fade` and faded stagger children are for small
+    furniture only (buttons, links, chips, captions).
+  - Reveals animate `translate`, `scale`, `clip-path` and `opacity`; hover and press own
+    `transform` and `box-shadow`. Keep it that way so the two never fight.
+  - Hover displacement goes inside `@media (hover: hover) and (pointer: fine)`, with
+    `:focus-visible` outside it. On a phone `:hover` sticks after a tap.
   - Hover displaces, press compresses. `--lift-sm`/`--lift-md`/`--lift-lg` and
     `--squish` carry those amounts. They sit off the 4px spacing scale on purpose
     and are never a substitute for spacing.
@@ -55,7 +75,8 @@ See the motion rule below.
     collapsed or interrupted animation can never strand an element invisible.
   - `prefers-reduced-motion` is handled by one blanket rule at the foot of
     `styles/site.css`. Add new hover displacements to the `transform: none` list
-    there; don't start a second block.
+    there; don't start a second block. Page reveals need nothing there: the engine
+    never arms under that preference.
 - **Voice**: plain sentences, no exclamation marks, no "luxury/premium/elevate/
   curated/artisanal". Say the material and the turnaround before you say it's lovely.
   Sentence case except eyebrow lines, which are uppercase in the markup. No emoji.
@@ -75,8 +96,14 @@ seam it plugs into.
   the font variables and `--logo` differ, both for Next's asset handling.
 - `styles/components.css` — the kit's `.ml-*` classes, used for fields.
 - `styles/site.css` — page and chrome layout, tokens only.
-- `lib/products.ts` — the catalogue, single source of truth.
+- `lib/products.ts` — the catalogue, single source of truth. Server-side only in
+  practice: client components import `lib/format.ts` for prices, and receive a
+  trimmed product (`toCardProduct`) rather than the whole record.
 - `lib/custom.ts` — made-to-order pricing rules.
+- `lib/motion.ts` / `lib/reveal.ts` — the entrance engine and its markup helper.
+- Every route is static. Read search params on the client inside their own
+  `<Suspense>` (see `ProductsBrowser`, `CreateFlow`), not in a page's props —
+  that makes the route a per-request render and stops `<Link>` prefetching it.
 
 ## Git
 

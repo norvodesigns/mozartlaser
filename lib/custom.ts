@@ -9,6 +9,10 @@ export type BlankForm = {
   name: string;
   price: number;
   image: string;
+  /** Pixel size of the image — carried here so the create flow doesn't ship
+      the whole image-size table to the browser for seven pictures. */
+  width: number;
+  height: number;
 };
 
 /** Blank stock for a piece designed from scratch. */
@@ -18,42 +22,56 @@ export const blankForms: BlankForm[] = [
     name: 'Custom Horizontal Plaque (10" × 8")',
     price: 22.99,
     image: '/products/blank-samples/horizontal.png',
+    width: 2000,
+    height: 1500,
   },
   {
     id: 'Wooden Plaque (Vertical)',
     name: 'Custom Vertical Plaque (8" × 10")',
     price: 19.99,
     image: '/products/blank-samples/vertical.png',
+    width: 1500,
+    height: 2000,
   },
   {
     id: 'Custom Bookmark',
     name: 'Custom Bookmark (6" × 2")',
     price: 10.99,
     image: '/products/blank-samples/bookmark.png',
+    width: 1428,
+    height: 2000,
   },
   {
     id: 'Wooden Coaster',
     name: 'Custom Coaster (4" × 4")',
     price: 6.99,
     image: '/products/blank-samples/coaster.png',
+    width: 1500,
+    height: 2000,
   },
   {
     id: 'Custom Slate Coaster',
     name: 'Custom Slate Coaster (4" × 4")',
     price: 12.99,
     image: '/products/blank-samples/1slatedesign.png',
+    width: 421,
+    height: 456,
   },
   {
     id: 'Custom Wooden Coin',
     name: 'Custom Wooden Coin (2" × 2")',
     price: 6.99,
     image: '/products/blank-samples/coin.jpg',
+    width: 1114,
+    height: 2000,
   },
   {
     id: 'Custom Leather Wallet',
     name: 'Custom Leather Wallet',
     price: 22.99,
     image: '/products/blank-samples/wallet.jpg',
+    width: 2000,
+    height: 1526,
   },
 ];
 

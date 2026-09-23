@@ -690,11 +690,4 @@ export async function getRelated(slug: string, limit = 4): Promise<Product[]> {
   return [...sameCategory, ...rest].slice(0, limit);
 }
 
-export function formatPrice(value: number): string {
-  return `$${value.toFixed(2)}`;
-}
-
-/** Media in the gallery may be a still or a short clip. */
-export function isVideo(src: string): boolean {
-  return /\.(mp4|mov|webm)$/i.test(src);
-}
+export { formatPrice, isVideo } from './format';

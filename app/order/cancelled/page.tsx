@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { reveal } from '@/lib/reveal';
 
 export const metadata: Metadata = {
   title: 'Checkout cancelled',
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
 export default function CancelledPage() {
   return (
     <section className="wrap status">
-      <div className="head head--center">
+      <div className="head head--center" {...reveal('stagger')}>
         <p className="eyebrow">Checkout cancelled</p>
         <h1>
           Nothing was <em>charged</em>
@@ -20,7 +21,7 @@ export default function CancelledPage() {
           or email us if something in checkout did not work.
         </p>
       </div>
-      <div className="row" style={{ justifyContent: 'center' }}>
+      <div className="row" style={{ justifyContent: 'center' }} {...reveal('stagger')}>
         <Link href="/products" className="btn">
           Back to the shop
         </Link>
