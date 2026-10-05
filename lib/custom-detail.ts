@@ -15,5 +15,7 @@ export function parseDetail(detail: string): DetailRow[] | null {
 
   return matches
     .map((m) => ({ label: m![1].trim(), value: m![2].trim() }))
-    .filter((r) => r.value && r.value !== 'None' && !(r.label === 'Quantity' && r.value === '1'));
+    .filter((r) => r.value && r.value !== 'None' && !(r.label === 'Quantity' && r.value === '1'))
+    // Where the uploaded file is stored: for the workshop, not for the cart.
+    .filter((r) => r.label !== 'File link');
 }

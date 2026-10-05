@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { useCart } from '@/components/CartProvider';
 import { reveal } from '@/lib/reveal';
 import { formatPrice } from '@/lib/format';
+import { OrderFileError, uploadOrderFile } from '@/lib/order-files';
 import type { Product, ProductImage } from '@/lib/products';
 import {
   BULK_THRESHOLD,
@@ -23,6 +24,18 @@ import {
 type Mode = 'personalize' | 'scratch';
 
 type Errors = Partial<Record<string, string>>;
+
+type Upload = {
+  status: 'idle' | 'uploading' | 'done' | 'error';
+  /** Share sent so far, 0–1. */
+  progress: number;
+  /** Where the stored file lives, once it's up. */
+  url: string;
+  message?: string;
+};
+const NO_UPLOAD: Upload = { status: 'idle', progress: 0, url: '' };
+/** Matches the dashboard's order-files route. */
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
 
 const STEPS = ['The piece', 'The engraving', 'Your details'];
 
@@ -51,7 +64,6 @@ function HandOff({ onHandOff }: { onHandOff: (value: HandOffValue) => void }) {
 export function CreateFlow({ products }: { products: PickerProduct[] }) {
   const { add } = useCart();
   const formRef = useRef<HTMLFormElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   const [step, setStep] = useState(0);
@@ -68,6 +80,9 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
   const [changes, setChanges] = useState('');
   const [notes, setNotes] = useState('');
   const [fileName, setFileName] = useState('');
+  const [upload, setUpload] = useState<Upload>(NO_UPLOAD);
+  const fileRef = useRef<File | null>(null);
+  const uploadRun = useRef<AbortController | null>(null);
 
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState('');
@@ -139,6 +154,52 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
     [products],
   );
 
+  /* The file is stored the moment it's chosen, so by the time the customer
+     has filled in their details it's usually already up. It used to ride
+     along in the hidden order form below, which the page removed as soon as
+     the customer finished — so it was never actually sent. */
+  function startUpload(file: File) {
+    uploadRun.current?.abort();
+    const run = new AbortController();
+    uploadRun.current = run;
+    setUpload({ status: 'uploading', progress: 0, url: '' });
+    uploadOrderFile(
+      file,
+      (progress) => {
+        if (!run.signal.aborted) setUpload((u) => ({ ...u, progress }));
+      },
+      run.signal
+    ).then(
+      (url) => {
+        if (!run.signal.aborted) setUpload({ status: 'done', progress: 1, url });
+      },
+      (error: unknown) => {
+        if (run.signal.aborted) return;
+        const message =
+          error instanceof OrderFileError ? error.message : 'We couldn’t upload that file. Try again.';
+        setUpload({ status: 'error', progress: 0, url: '', message });
+      }
+    );
+  }
+
+  function chooseFile(file: File | null) {
+    fileRef.current = file;
+    setFileName(file ? file.name : '');
+    setErrors((e) => ({ ...e, file: undefined }));
+    if (file && file.size > MAX_FILE_BYTES) {
+      uploadRun.current?.abort();
+      setUpload({ ...NO_UPLOAD, status: 'error', message: 'That file is over 25 MB. Try a smaller copy of it.' });
+    } else if (file) startUpload(file);
+    else {
+      uploadRun.current?.abort();
+      setUpload(NO_UPLOAD);
+    }
+  }
+
+  function retryUpload() {
+    if (fileRef.current) startUpload(fileRef.current);
+  }
+
   function validateStep(index: number): boolean {
     const next: Errors = {};
 
@@ -161,6 +222,12 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
       } else if (!changes.trim()) {
         next.changes = 'Describe what you want made so we can price and draw it.';
       }
+    }
+
+    // Can't move on with a file that failed to upload: the order would arrive
+    // naming a file nobody has.
+    if (index === 1 && fileName && upload.status === 'error') {
+      next.file = upload.message ?? 'Your file didn’t upload. Try again, or remove it.';
     }
 
     if (index === 2) {
@@ -198,7 +265,16 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
   }
 
   function handleSubmit() {
+    // A file can fail after the customer has moved on to their details. Take
+    // them back to it, where the error and "Try again" are.
+    if (fileName && upload.status === 'error') {
+      setErrors({ file: upload.message ?? 'Your file didn’t upload. Try again, or remove it.' });
+      setStep(1);
+      return;
+    }
     if (!validateStep(2)) return;
+    // The button waits while a file is still going up; this is the backstop.
+    if (fileName && upload.status !== 'done') return;
 
     const detail = [
       `Text: ${text.trim() || 'None'}`,
@@ -206,12 +282,14 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
       `Size: ${fontSize || 'None'}`,
       `Placement: ${placement.trim() || 'None'}`,
       `File: ${fileName || 'None'}`,
+      ...(upload.url ? [`File link: ${upload.url}`] : []),
       `File placement: ${filePlacement.trim() || 'None'}`,
       `Quantity: ${quantity}${bulkApplies ? ', bulk discount 10%' : ''}`,
     ].join('\n');
 
-    // Posts into the hidden iframe, exactly as the old form did, so the
-    // order backend keeps receiving the same fields and the file upload.
+    // The order-form email. It now carries a link to the stored file rather
+    // than the file itself, so the post is small and finishes in a moment;
+    // the frame it posts into stays on the page after this (see `relay`).
     formRef.current?.submit();
 
     add({
@@ -233,8 +311,50 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
     setSubmitted(true);
   }
 
-  if (submitted) {
-    return (
+  const relay = (
+    <>
+        {/* The order-form email posts into a hidden frame, so it needs no
+            cross-origin request. This is rendered in both states below: the
+            frame used to be removed along with the flow the instant the
+            customer finished, which cancelled the post — no email, no file. */}
+        <iframe name="order-frame" title="Order submission" style={{ display: 'none' }} />
+        <form
+          ref={formRef}
+          method="POST"
+          action={ORDER_ENDPOINT}
+          encType="multipart/form-data"
+          target="order-frame"
+          style={{ display: 'none' }}
+          aria-hidden="true"
+        >
+          <input type="hidden" name="subject" value="New Custom Order from Mozart Laser" />
+          <input type="hidden" name="from_name" value="MozartLaser.com" />
+          <input
+            type="hidden"
+            name="flow_type"
+            value={mode === 'personalize' ? 'customize-existing' : 'create-your-own'}
+          />
+          <input type="hidden" name="product" value={pieceName} />
+          <input type="hidden" name="selected_product" value={pieceName} />
+          <input type="hidden" name="engraved_text" value={text} />
+          <input type="hidden" name="font" value={font} />
+          <input type="hidden" name="font_size" value={fontSize} />
+          <input type="hidden" name="text_location" value={placement} />
+          <input type="hidden" name="file_placement" value={filePlacement} />
+          <input type="hidden" name="custom_file_placement" value={filePlacement} />
+          <input type="hidden" name="custom_changes" value={changes} />
+          <input type="hidden" name="additional_notes" value={notes} />
+          <input type="hidden" name="total_price" value={total.toFixed(2)} />
+          <input type="hidden" name="order_quantity" value={quantity} />
+          <input type="hidden" name="customer_name" value={name} />
+          <input type="hidden" name="replyto" value={email} />
+          <input type="hidden" name="design_file_name" value={fileName} />
+          <input type="hidden" name="design_file_link" value={upload.url} />
+        </form>
+    </>
+  );
+
+  const done = (
       <div className="done" {...reveal('stagger')}>
         <p className="eyebrow">Order started</p>
         <h2>
@@ -250,13 +370,21 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
           </a>
         </div>
       </div>
-    );
-  }
+  );
 
   const canRevisit = (index: number) => index <= reached;
 
+  // The relay comes first and in the same place in both states, so React
+  // keeps the very same frame and form when the flow gives way to the
+  // confirmation. Anywhere else, React rebuilds them on that switch, and
+  // discarding the frame cancels the post that was just sent into it.
   return (
     <>
+      {relay}
+      {submitted ? (
+        done
+      ) : (
+      <>
       <Suspense fallback={null}>
         <HandOff onHandOff={handOff} />
       </Suspense>
@@ -441,12 +569,14 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
                   </Field>
 
                   <UploadField
-                    fileRef={fileRef}
                     fileName={fileName}
-                    onFile={setFileName}
+                    upload={upload}
+                    onFile={chooseFile}
+                    onRetry={retryUpload}
                     filePlacement={filePlacement}
                     setFilePlacement={setFilePlacement}
                     error={errors.filePlacement}
+                    fileError={errors.file}
                   />
 
                   <div className="ml-field">
@@ -488,12 +618,14 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
                   </div>
 
                   <UploadField
-                    fileRef={fileRef}
                     fileName={fileName}
-                    onFile={setFileName}
+                    upload={upload}
+                    onFile={chooseFile}
+                    onRetry={retryUpload}
                     filePlacement={filePlacement}
                     setFilePlacement={setFilePlacement}
                     error={errors.filePlacement}
+                    fileError={errors.file}
                   />
                 </>
               )}
@@ -609,8 +741,15 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
                 Next
               </button>
             ) : (
-              <button type="button" className="btn btn--lg" onClick={handleSubmit}>
-                Add to cart · {formatPrice(total)}
+              <button
+                type="button"
+                className="btn btn--lg"
+                onClick={handleSubmit}
+                disabled={!!fileName && upload.status === 'uploading'}
+              >
+                {fileName && upload.status === 'uploading'
+                  ? `Uploading your file · ${Math.round(upload.progress * 100)}%`
+                  : `Add to cart · ${formatPrice(total)}`}
               </button>
             )}
           </div>
@@ -668,42 +807,8 @@ export function CreateFlow({ products }: { products: PickerProduct[] }) {
           </p>
         </aside>
       </div>
-
-      {/* The order brief posts into a hidden frame so the file upload keeps
-          working without a cross-origin request. Field names are unchanged. */}
-      <iframe name="order-frame" title="Order submission" style={{ display: 'none' }} />
-      <form
-        ref={formRef}
-        method="POST"
-        action={ORDER_ENDPOINT}
-        encType="multipart/form-data"
-        target="order-frame"
-        style={{ display: 'none' }}
-        aria-hidden="true"
-      >
-        <input type="hidden" name="subject" value="New Custom Order from Mozart Laser" />
-        <input type="hidden" name="from_name" value="MozartLaser.com" />
-        <input
-          type="hidden"
-          name="flow_type"
-          value={mode === 'personalize' ? 'customize-existing' : 'create-your-own'}
-        />
-        <input type="hidden" name="product" value={pieceName} />
-        <input type="hidden" name="selected_product" value={pieceName} />
-        <input type="hidden" name="engraved_text" value={text} />
-        <input type="hidden" name="font" value={font} />
-        <input type="hidden" name="font_size" value={fontSize} />
-        <input type="hidden" name="text_location" value={placement} />
-        <input type="hidden" name="file_placement" value={filePlacement} />
-        <input type="hidden" name="custom_file_placement" value={filePlacement} />
-        <input type="hidden" name="custom_changes" value={changes} />
-        <input type="hidden" name="additional_notes" value={notes} />
-        <input type="hidden" name="total_price" value={total.toFixed(2)} />
-        <input type="hidden" name="order_quantity" value={quantity} />
-        <input type="hidden" name="customer_name" value={name} />
-        <input type="hidden" name="replyto" value={email} />
-        <input ref={fileRef} type="file" name="design_file" />
-      </form>
+      </>
+      )}
     </>
   );
 }
@@ -796,47 +901,77 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 }
 
 function UploadField({
-  fileRef,
   fileName,
+  upload,
   onFile,
+  onRetry,
   filePlacement,
   setFilePlacement,
   error,
+  fileError,
 }: {
-  fileRef: React.RefObject<HTMLInputElement>;
   fileName: string;
-  onFile: (name: string) => void;
+  upload: Upload;
+  onFile: (file: File | null) => void;
+  onRetry: () => void;
   filePlacement: string;
   setFilePlacement: (value: string) => void;
   error?: string;
+  fileError?: string;
 }) {
+  const failed = upload.status === 'error';
+  const note = !fileName
+    ? 'Or drag one in'
+    : upload.status === 'uploading'
+      ? `Uploading · ${Math.round(upload.progress * 100)}%`
+      : upload.status === 'done'
+        ? 'Uploaded — tap to replace'
+        : 'Not uploaded';
+  const problem = fileError ?? (failed ? upload.message : undefined);
+
   return (
     <>
       <Field
         label="Upload a design or photo"
-        hint="Optional. JPG or PNG, the simpler the better."
+        hint="Optional. A photo or a design — JPG, PNG or PDF, up to 25 MB."
       >
         {/* The native file input is unstyleable, so it sits invisibly over a
             drop zone we can style. The label still drives it, so the keyboard
             and screen readers get the real control. */}
-        <label className="drop" data-filled={fileName || undefined}>
+        <label className="drop" data-filled={fileName || undefined} data-state={fileName ? upload.status : undefined}>
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             onChange={(event) => {
-              const file = event.target.files?.[0];
-              onFile(file ? file.name : '');
-              // Mirror the chosen file into the form that actually posts.
-              if (fileRef.current) fileRef.current.files = event.target.files;
+              const file = event.target.files?.[0] ?? null;
+              // Cleared so choosing the same file again still counts as a change.
+              event.target.value = '';
+              onFile(file);
             }}
           />
-          <span className="drop__title">
-            {fileName ? fileName : 'Choose an image'}
+          <span className="drop__title">{fileName ? fileName : 'Choose an image'}</span>
+          <span className="drop__note" aria-live="polite">
+            {note}
           </span>
-          <span className="drop__note">
-            {fileName ? 'Attached — tap to replace' : 'Or drag one in'}
-          </span>
+          {fileName && upload.status !== 'idle' ? (
+            <span className="drop__bar" aria-hidden="true">
+              <span style={{ transform: `scaleX(${upload.status === 'done' ? 1 : upload.progress})` }} />
+            </span>
+          ) : null}
         </label>
+        {fileName ? (
+          <div className="drop__actions">
+            {failed ? (
+              <button type="button" className="btn btn--sm" onClick={onRetry}>
+                Try again
+              </button>
+            ) : null}
+            <button type="button" className="btn btn--secondary btn--sm" onClick={() => onFile(null)}>
+              Remove file
+            </button>
+          </div>
+        ) : null}
+        {problem ? <p className="ml-field__error">{problem}</p> : null}
       </Field>
 
       {fileName ? (

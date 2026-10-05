@@ -107,6 +107,13 @@ seam it plugs into.
   trimmed product (`toCardProduct`) rather than the whole record.
 - `lib/custom.ts` — made-to-order pricing rules.
 - `lib/motion.ts` / `lib/reveal.ts` — the entrance engine and its markup helper.
+- `lib/order-files.ts` — a custom order's file (the customer's photo or design) is
+  uploaded the moment it's chosen, through the dashboard's `order-files` route, and
+  the order carries its link ("File link" in the brief) so the dashboard can show
+  and download it. The order-form email (FormBackend) gets the link, not the file.
+  Its hidden frame and form (`relay` in `CreateFlow`) must stay mounted, in the same
+  place, after the customer finishes: removing or remounting the frame cancels the
+  post. That bug lost every custom order's file and email from 19 Sept to 4 Oct 2026.
 - Every route is static. Read search params on the client inside their own
   `<Suspense>` (see `ProductsBrowser`, `CreateFlow`), not in a page's props —
   that makes the route a per-request render and stops `<Link>` prefetching it.
